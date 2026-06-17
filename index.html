@@ -24,7 +24,6 @@ body { margin:0; font-family: system-ui, -apple-system, 'Segoe UI', Roboto; back
 .row { display:flex; justify-content:space-between; align-items:center; }
 .player-name { font-weight:700; }
 .gold { color:#f0c95d; font-weight:800; }
-.match-info { font-size:13px; color:#d8eefc; margin-top:8px; padding-top:8px; border-top:1px solid #132634; }
 .match-row { display:flex; justify-content:space-between; margin:6px 0; font-size:14px; }
 .match-score { color:#bfe0ff; font-weight:700; }
 .error-box { background:#3a1a1a; border:1px solid #8a3a3a; color:#ff8b8b; padding:12px; border-radius:8px; margin:10px 0; }
@@ -47,7 +46,8 @@ details.player[open] summary::before { transform:rotate(90deg); color:#f0c95d; }
 .details-item { display:flex; justify-content:space-between; padding:8px; border-radius:6px; background:#071523; margin-bottom:6px; align-items:center; }
 .details-item .left { font-size:14px; }
 .details-item .right { font-weight:700; }
-.debug-box { background:#0a1a2a; border:1px solid #1a3a5a; color:#7ab8e0; padding:10px; border-radius:8px; margin:10px 0; font-size:12px; }
+.live-badge { display:inline-block; background:#2a6b3a; color:#8fffb0; font-size:11px; padding:2px 8px; border-radius:999px; font-weight:700; margin-left:6px; animation: pulse 1.5s infinite; }
+@keyframes pulse { 0%,100%{opacity:1;} 50%{opacity:0.5;} }
 @media (max-width:700px){
   .container { padding:0 10px 80px; }
   .title { font-size:18px; }
@@ -80,100 +80,47 @@ details.player[open] summary::before { transform:rotate(90deg); color:#f0c95d; }
    ============================================================ */
 var API_KEY = "532ab6db012744d0912eedbd40c4764d";
 var COMPETITION_ID = "WC";
-var UPDATE_INTERVAL = 300000; // 5 minutter
+var UPDATE_INTERVAL = 300000;
+var CACHE_VERSION = "v4"; // bump ved kodeoppdatering for aa slette gammel cache
 
 /* ============================================================
    SPILLERE OG TIPS
    ============================================================ */
 var PLAYERS = ["Staals","Kong","Dox","Jojo","Marko","Barra"];
 var MATCHES = [
-  {id:1,  home:"Mexico",        away:"South Africa",              tips:["3-0","2-1","2-0","3-1","2-1","3-0"]},
-  {id:2,  home:"South Korea",   away:"Czechia",                   tips:["2-1","1-1","1-1","2-3","1-0","1-2"]},
-  {id:3,  home:"Canada",        away:"Bosnia and Herzegovina",    tips:["1-1","0-1","2-1","2-0","1-1","2-0"]},
-  {id:4,  home:"United States", away:"Paraguay",                  tips:["2-1","1-1","0-0","2-3","3-0","2-1"]},
-  {id:5,  home:"Qatar",         away:"Switzerland",               tips:["0-3","0-3","0-1","1-3","0-2","0-3"]},
-  {id:6,  home:"Brazil",        away:"Morocco",                   tips:["2-2","1-1","3-1","2-2","2-1","2-1"]},
-  {id:7,  home:"Haiti",         away:"Scotland",                  tips:["0-3","0-0","0-3","0-2","0-3","0-2"]},
-  {id:8,  home:"Australia",     away:"Turkey",                    tips:["0-1","0-2","1-3","0-2","1-2","0-2"]},
-  {id:9,  home:"Germany",       away:"Cura\u00e7ao",              tips:["6-0","3-0","5-0","4-0","4-0","3-0"]},
-  {id:10, home:"Netherlands",   away:"Japan",                     tips:["1-1","2-1","1-2","1-2","1-1","3-1"]},
-  {id:11, home:"Ivory Coast",   away:"Ecuador",                   tips:["1-2","1-0","1-1","0-3","3-3","1-2"]},
-  {id:12, home:"Sweden",        away:"Tunisia",                   tips:["2-1","1-1","1-1","2-2","1-1","1-0"]},
-  {id:13, home:"Spain",         away:"Cape Verde",                tips:["3-0","3-0","3-0","5-0","3-0","3-0"]},
-  {id:14, home:"Belgium",       away:"Egypt",                     tips:["2-2","2-0","1-0","2-1","2-1","2-0"]},
-  {id:15, home:"Saudi Arabia",  away:"Uruguay",                   tips:["0-2","0-2","0-3","0-3","2-2","0-1"]},
-  {id:16, home:"Iran",          away:"New Zealand",               tips:["2-0","1-1","0-0","2-1","1-1","1-0"]},
-  {id:17, home:"France",        away:"Senegal",                   tips:["2-2","3-1","2-1","2-1","3-1","2-0"]},
-  {id:18, home:"Iraq",          away:"Norway",                    tips:["1-2","1-3","1-1","1-3","1-4","1-2"]},
-  {id:19, home:"Argentina",     away:"Algeria",                   tips:["3-1","2-0","2-0","2-0","2-1","3-1"]},
-  {id:20, home:"Austria",       away:"Jordan",                    tips:["2-2","1-0","2-1","2-0","3-0","2-0"]}
+  {id:1,  home:"Mexico",        away:"South Africa",           tlaH:"MEX", tlaA:"RSA", tips:["3-0","2-1","2-0","3-1","2-1","3-0"]},
+  {id:2,  home:"South Korea",   away:"Czechia",                tlaH:"KOR", tlaA:"CZE", tips:["2-1","1-1","1-1","2-3","1-0","1-2"]},
+  {id:3,  home:"Canada",        away:"Bosnia and Herzegovina", tlaH:"CAN", tlaA:"BIH", tips:["1-1","0-1","2-1","2-0","1-1","2-0"]},
+  {id:4,  home:"United States", away:"Paraguay",               tlaH:"USA", tlaA:"PAR", tips:["2-1","1-1","0-0","2-3","3-0","2-1"]},
+  {id:5,  home:"Qatar",         away:"Switzerland",            tlaH:"QAT", tlaA:"SUI", tips:["0-3","0-3","0-1","1-3","0-2","0-3"]},
+  {id:6,  home:"Brazil",        away:"Morocco",                tlaH:"BRA", tlaA:"MAR", tips:["2-2","1-1","3-1","2-2","2-1","2-1"]},
+  {id:7,  home:"Haiti",         away:"Scotland",               tlaH:"HAI", tlaA:"SCO", tips:["0-3","0-0","0-3","0-2","0-3","0-2"]},
+  {id:8,  home:"Australia",     away:"Turkey",                 tlaH:"AUS", tlaA:"TUR", tips:["0-1","0-2","1-3","0-2","1-2","0-2"]},
+  {id:9,  home:"Germany",       away:"Cura\u00e7ao",           tlaH:"GER", tlaA:"CUW", tips:["6-0","3-0","5-0","4-0","4-0","3-0"]},
+  {id:10, home:"Netherlands",   away:"Japan",                  tlaH:"NED", tlaA:"JPN", tips:["1-1","2-1","1-2","1-2","1-1","3-1"]},
+  {id:11, home:"Ivory Coast",   away:"Ecuador",                tlaH:"CIV", tlaA:"ECU", tips:["1-2","1-0","1-1","0-3","3-3","1-2"]},
+  {id:12, home:"Sweden",        away:"Tunisia",                tlaH:"SWE", tlaA:"TUN", tips:["2-1","1-1","1-1","2-2","1-1","1-0"]},
+  {id:13, home:"Spain",         away:"Cape Verde",             tlaH:"ESP", tlaA:"CPV", tips:["3-0","3-0","3-0","5-0","3-0","3-0"]},
+  {id:14, home:"Belgium",       away:"Egypt",                  tlaH:"BEL", tlaA:"EGY", tips:["2-2","2-0","1-0","2-1","2-1","2-0"]},
+  {id:15, home:"Saudi Arabia",  away:"Uruguay",                tlaH:"KSA", tlaA:"URU", tips:["0-2","0-2","0-3","0-3","2-2","0-1"]},
+  {id:16, home:"Iran",          away:"New Zealand",            tlaH:"IRN", tlaA:"NZL", tips:["2-0","1-1","0-0","2-1","1-1","1-0"]},
+  {id:17, home:"France",        away:"Senegal",                tlaH:"FRA", tlaA:"SEN", tips:["2-2","3-1","2-1","2-1","3-1","2-0"]},
+  {id:18, home:"Iraq",          away:"Norway",                 tlaH:"IRQ", tlaA:"NOR", tips:["1-2","1-3","1-1","1-3","1-4","1-2"]},
+  {id:19, home:"Argentina",     away:"Algeria",                tlaH:"ARG", tlaA:"ALG", tips:["3-1","2-0","2-0","2-0","2-1","3-1"]},
+  {id:20, home:"Austria",       away:"Jordan",                 tlaH:"AUT", tlaA:"JOR", tips:["2-2","1-0","2-1","2-0","3-0","2-0"]}
 ];
 
 /* ============================================================
-   FIFA TLA-KODER -> PAALITELIG MATCHING
-   I stedet for aa matche paa lagnavn (som varierer), matcher
-   vi paa FIFA tre-bokstavskoder som er unike og stabile.
+   TLA-PAR OPPSLAG (primaer matching-metode)
+   Bygger et oppslag fra FIFA-kodepar til lokal kamp.
    ============================================================ */
-var TEAM_TLA = {
-  "Mexico":"MEX", "South Africa":"RSA", "South Korea":"KOR", "Czechia":"CZE",
-  "Canada":"CAN", "Bosnia and Herzegovina":"BIH", "United States":"USA", "Paraguay":"PAR",
-  "Qatar":"QAT", "Switzerland":"SUI", "Brazil":"BRA", "Morocco":"MAR",
-  "Haiti":"HAI", "Scotland":"SCO", "Australia":"AUS", "Turkey":"TUR",
-  "Germany":"GER", "Cura\u00e7ao":"CUW", "Netherlands":"NED", "Japan":"JPN",
-  "Ivory Coast":"CIV", "Ecuador":"ECU", "Sweden":"SWE", "Tunisia":"TUN",
-  "Spain":"ESP", "Cape Verde":"CPV", "Belgium":"BEL", "Egypt":"EGY",
-  "Saudi Arabia":"KSA", "Uruguay":"URU", "Iran":"IRN", "New Zealand":"NZL",
-  "France":"FRA", "Senegal":"SEN", "Iraq":"IRQ", "Norway":"NOR",
-  "Argentina":"ARG", "Algeria":"ALG", "Austria":"AUT", "Jordan":"JOR"
-};
-
-// Bygg oppslag: TLA-par -> lokal kamp
 var TLA_PAIR = {};
 MATCHES.forEach(function(m) {
-  var h = TEAM_TLA[m.home], a = TEAM_TLA[m.away];
-  if (h && a) {
-    TLA_PAIR[h + "-" + a] = m;
-    TLA_PAIR[a + "-" + h] = m;
+  if (m.tlaH && m.tlaA) {
+    TLA_PAIR[m.tlaH + "-" + m.tlaA] = m;
+    TLA_PAIR[m.tlaA + "-" + m.tlaH] = m;
   }
 });
-
-/* ============================================================
-   NAVNE-ALIASER (fallback hvis TLA mangler)
-   ============================================================ */
-var ALIASES = {
-  "korea republic": "south korea",
-  "korea, republic of": "south korea",
-  "republic of korea": "south korea",
-  "korea rep.": "south korea",
-  "czech republic": "czechia",
-  "czech rep.": "czechia",
-  "cape verde islands": "cape verde",
-  "cape verde is.": "cape verde",
-  "cabo verde": "cape verde",
-  "curacao": "curacao",
-  "cote d'ivoire": "ivory coast",
-  "cote divoire": "ivory coast",
-  "cote d ivoire": "ivory coast",
-  "congo dr": "congo dr",
-  "dr congo": "congo dr",
-  "democratic republic of the congo": "congo dr",
-  "usa": "united states",
-  "united states of america": "united states",
-  "bosnia & herzegovina": "bosnia and herzegovina",
-  "bosnia-herzegovina": "bosnia and herzegovina",
-  "turkiye": "turkey",
-  "aotearoa new zealand": "new zealand",
-  "kingdom of saudi arabia": "saudi arabia",
-  "republic of south africa": "south africa"
-};
-
-/* ============================================================
-   CORS-PROXYER (kun de som stotter custom headers)
-   ============================================================ */
-var PROXIES = [
-  "https://corsproxy.io/?",
-  "https://cors-proxy.fringe.zone/"
-];
 
 /* ============================================================
    TILSTAND
@@ -186,48 +133,8 @@ var MAX_RETRIES = 2;
 var currentTab = "leaderboard";
 
 /* ============================================================
-   HJELPEFUNKSJONER
+   POENGBEREGNING
    ============================================================ */
-function normalize(str) {
-  if (!str) return "";
-  return String(str).toLowerCase()
-    .normalize("NFD").replace(/\p{Diacritic}/gu, "")
-    .replace(/[^a-z0-9\s]/g, " ")
-    .replace(/\s+/g, " ").trim();
-}
-
-function canonicalName(raw) {
-  var n = normalize(raw);
-  if (!n) return n;
-  if (ALIASES[n]) return normalize(ALIASES[n]);
-  return n;
-}
-
-function tokens(str) {
-  if (!str) return [];
-  return normalize(str).split(" ").filter(Boolean);
-}
-
-function tokenOverlap(a, b) {
-  var ta = tokens(a), tb = tokens(b);
-  if (ta.length === 0 || tb.length === 0) return 0;
-  var inter = ta.filter(function(x) { return tb.indexOf(x) >= 0; }).length;
-  return inter / Math.min(ta.length, tb.length);
-}
-
-function namesMatchAdvanced(localName, apiName) {
-  if (!localName || !apiName) return false;
-  var ln = canonicalName(localName);
-  var an = canonicalName(apiName);
-  if (!ln || !an) return false;
-  if (ln === an) return true;
-  if (ln.indexOf(an) >= 0 || an.indexOf(ln) >= 0) return true;
-  if (tokenOverlap(ln, an) >= 0.5) return true;
-  var cross = (tokenOverlap(localName, apiName) + tokenOverlap(apiName, localName)) / 2;
-  if (cross >= 0.45) return true;
-  return false;
-}
-
 function points(actual, tip) {
   if (!actual) return 0;
   if (actual === tip) return 4;
@@ -240,31 +147,16 @@ function points(actual, tip) {
 }
 
 /* ============================================================
-   FINN LOKAL KAMP FRA API-KAMP (TLA foerst, navn som fallback)
+   FINN LOKAL KAMP FRA API-KAMP VIA TLA
    ============================================================ */
 function findLocalMatch(apiMatch) {
   var homeTla = (apiMatch.homeTeam && apiMatch.homeTeam.tla) ? apiMatch.homeTeam.tla.toUpperCase() : "";
   var awayTla = (apiMatch.awayTeam && apiMatch.awayTeam.tla) ? apiMatch.awayTeam.tla.toUpperCase() : "";
-
-  // 1. TLA-oppslag (mest paalitelig)
   if (homeTla && awayTla) {
     var key = homeTla + "-" + awayTla;
     if (TLA_PAIR[key]) return TLA_PAIR[key];
   }
-
-  // 2. Navnmatching (fallback)
-  var rawHome = (apiMatch.homeTeam && (apiMatch.homeTeam.name || apiMatch.homeTeam.shortName)) || "";
-  var rawAway = (apiMatch.awayTeam && (apiMatch.awayTeam.name || apiMatch.awayTeam.shortName)) || "";
-
-  var found = MATCHES.find(function(m) {
-    return namesMatchAdvanced(m.home, rawHome) && namesMatchAdvanced(m.away, rawAway);
-  });
-  if (!found) {
-    found = MATCHES.find(function(m) {
-      return namesMatchAdvanced(m.home, rawAway) && namesMatchAdvanced(m.away, rawHome);
-    });
-  }
-  return found || null;
+  return null;
 }
 
 /* ============================================================
@@ -277,7 +169,7 @@ function setStatus(text, isError) {
 }
 
 function showError(msg) {
-  document.getElementById("errors").innerHTML = '<div class="error-box">' + msg + '</div>';
+  document.getElementById("errors").innerHTML = '<div class="error-box">' + msg + "</div>";
 }
 
 function clearErrors() {
@@ -285,20 +177,30 @@ function clearErrors() {
 }
 
 /* ============================================================
-   LOCALSTORAGE CACHE (viser sist kjente data umiddelbart)
+   CACHE MED VERSJONERING
+   Gammel cache slettes automatisk naar koden oppdateres.
    ============================================================ */
+var CACHE_KEY = "tippeliga_" + CACHE_VERSION;
+
 function saveCache() {
   try {
-    localStorage.setItem("tippeliga_cache", JSON.stringify({
+    localStorage.setItem(CACHE_KEY, JSON.stringify({
       results: results,
       time: lastFetchTime ? lastFetchTime.toISOString() : null
     }));
-  } catch (e) { /* quota exceeded – ignorer */ }
+  } catch (e) { /* ignorer */ }
 }
 
 function loadCache() {
   try {
-    var raw = localStorage.getItem("tippeliga_cache");
+    // Slett gamle versjoner
+    for (var i = 0; i < localStorage.length; i++) {
+      var key = localStorage.key(i);
+      if (key && key.indexOf("tippeliga_") === 0 && key !== CACHE_KEY) {
+        localStorage.removeItem(key);
+      }
+    }
+    var raw = localStorage.getItem(CACHE_KEY);
     if (!raw) return false;
     var parsed = JSON.parse(raw);
     if (parsed.results) {
@@ -306,57 +208,53 @@ function loadCache() {
       lastFetchTime = parsed.time ? new Date(parsed.time) : null;
       return true;
     }
-  } catch (e) { /* korrupt cache – ignorer */ }
+  } catch (e) { /* korrupt cache */ }
   return false;
 }
 
 /* ============================================================
-   DATAHENTING – PARALLELL PROXY-RACING
-   Sender foresporselen til alle proxyer samtidig.
-   Den foerste som svarer med gyldig JSON vinner.
+   DATAHENTING – DIREKTE + PROXY-FALLBACK
+   Forsoker foerst direkte API-kall (raskest).
+   Faller tilbake til corsproxy.io ved CORS-feil.
    ============================================================ */
-function tryProxy(proxyUrl, apiUrl) {
+function tryFetch(url, options, timeout) {
   return new Promise(function(resolve, reject) {
     var controller = new AbortController();
-    var tid = setTimeout(function() { controller.abort(); }, 8000);
-
-    fetch(proxyUrl + encodeURIComponent(apiUrl), {
-      method: "GET",
-      headers: { "X-Auth-Token": API_KEY },
-      signal: controller.signal
-    })
-    .then(function(res) {
+    var tid = setTimeout(function() { controller.abort(); }, timeout);
+    options.signal = controller.signal;
+    fetch(url, options).then(function(res) {
       clearTimeout(tid);
       if (!res.ok) { reject(new Error("HTTP " + res.status)); return; }
       return res.text();
-    })
-    .then(function(text) {
+    }).then(function(text) {
       if (!text) { reject(new Error("Tom respons")); return; }
-      var trimmed = text.trim();
-      if (trimmed.charAt(0) !== "{" && trimmed.charAt(0) !== "[") {
-        reject(new Error("Ikke JSON")); return;
-      }
-      resolve(JSON.parse(trimmed));
-    })
-    .catch(function(e) {
-      clearTimeout(tid);
-      reject(e);
-    });
+      var t = text.trim();
+      if (t.charAt(0) !== "{" && t.charAt(0) !== "[") { reject(new Error("Ikke JSON")); return; }
+      resolve(JSON.parse(t));
+    }).catch(function(e) { clearTimeout(tid); reject(e); });
   });
 }
 
-function fetchWithProxy(apiUrl) {
-  var attempts = PROXIES.map(function(p) { return tryProxy(p, apiUrl); });
+function fetchData(apiUrl) {
+  var headers = { "X-Auth-Token": API_KEY };
 
-  // Promise.any: foerste vellykkede respons vinner
+  // Strategi 1: Direkte kall (raskest, ingen proxy)
+  var direct = tryFetch(apiUrl, { method: "GET", headers: headers }, 8000)
+    .then(function(data) { console.log("Direkte API-kall lyktes!"); return data; });
+
+  // Strategi 2: Via corsproxy.io
+  var proxy = tryFetch(
+    "https://corsproxy.io/?" + encodeURIComponent(apiUrl),
+    { method: "GET", headers: headers },
+    10000
+  ).then(function(data) { console.log("Proxy-kall lyktes (corsproxy.io)"); return data; });
+
+  // Race: den foerste som svarer med gyldig data vinner
   if (typeof Promise.any === "function") {
-    return Promise.any(attempts);
+    return Promise.any([direct, proxy]);
   }
-
-  // Fallback for eldre nettlesere: proev sekvensielt
-  return attempts.reduce(function(chain, attempt, i) {
-    return chain.catch(function() { return tryProxy(PROXIES[i], apiUrl); });
-  }, Promise.reject());
+  // Fallback for eldre nettlesere
+  return direct.catch(function() { return proxy; });
 }
 
 /* ============================================================
@@ -371,50 +269,46 @@ function fetchLive() {
 
   var apiUrl = "https://api.football-data.org/v4/competitions/" + COMPETITION_ID + "/matches?limit=500";
 
-  return fetchWithProxy(apiUrl)
+  return fetchData(apiUrl)
     .then(function(data) {
       if (!data || !Array.isArray(data.matches)) {
-        throw new Error("Ugyldig API-respons");
+        throw new Error("Ugyldig API-respons: mangler matches-array");
       }
 
       var updated = {};
       for (var k in results) { if (results.hasOwnProperty(k)) updated[k] = results[k]; }
 
-      var matchedCount = 0;
-      var unmatchedApi = [];
+      var matchedFinished = 0;
+      var matchedTotal = 0;
+
+      console.log("=== MATCHING-RAPPORT ===");
+      console.log("API returnerte " + data.matches.length + " kamper totalt");
 
       data.matches.forEach(function(match) {
-        try {
-          var fullHome = (match.score && match.score.fullTime) ? match.score.fullTime.home : null;
-          var fullAway = (match.score && match.score.fullTime) ? match.score.fullTime.away : null;
-          var isFinished = match.status === "FINISHED" || (fullHome !== null && fullHome !== undefined);
-          var score = isFinished ? (fullHome + "-" + fullAway) : null;
+        var rawHome = (match.homeTeam && (match.homeTeam.name || match.homeTeam.shortName)) || "?";
+        var rawAway = (match.awayTeam && (match.awayTeam.name || match.awayTeam.shortName)) || "?";
+        var homeTla = (match.homeTeam && match.homeTeam.tla) || "?";
+        var awayTla = (match.awayTeam && match.awayTeam.tla) || "?";
 
-          var rawHome = (match.homeTeam && (match.homeTeam.name || match.homeTeam.shortName)) || "";
-          var rawAway = (match.awayTeam && (match.awayTeam.name || match.awayTeam.shortName)) || "";
+        var fullHome = (match.score && match.score.fullTime) ? match.score.fullTime.home : null;
+        var fullAway = (match.score && match.score.fullTime) ? match.score.fullTime.away : null;
+        var hasScore = (fullHome !== null && fullHome !== undefined && fullAway !== null && fullAway !== undefined);
+        var score = hasScore ? (fullHome + "-" + fullAway) : null;
 
-          var localMatch = findLocalMatch(match);
+        var localMatch = findLocalMatch(match);
 
-          if (localMatch) {
-            updated[localMatch.id] = {
-              score: score,
-              status: match.status,
-              date: match.utcDate,
-              homeName: rawHome,
-              awayName: rawAway,
-              apiId: match.id
-            };
-            if (score) matchedCount++;
-          } else if (rawHome || rawAway) {
-            unmatchedApi.push({
-              home: rawHome,
-              away: rawAway,
-              tlaH: match.homeTeam ? match.homeTeam.tla : "?",
-              tlaA: match.awayTeam ? match.awayTeam.tla : "?"
-            });
-          }
-        } catch (e) {
-          console.error("Feil ved prosessering av kamp:", e);
+        if (localMatch) {
+          matchedTotal++;
+          updated[localMatch.id] = {
+            score: score,
+            status: match.status,
+            date: match.utcDate,
+            homeName: rawHome,
+            awayName: rawAway,
+            apiId: match.id
+          };
+          if (score) matchedFinished++;
+          console.log("MATCH #" + localMatch.id + ": " + rawHome + " (" + homeTla + ") " + (score || "vs") + " " + rawAway + " (" + awayTla + ") [" + match.status + "]");
         }
       });
 
@@ -424,20 +318,18 @@ function fetchLive() {
       saveCache();
       render();
 
-      setStatus("Oppdatert: " + lastFetchTime.toLocaleTimeString() + " (" + matchedCount + "/" + MATCHES.length + " ferdige)");
+      console.log("=== RESULTAT: " + matchedTotal + "/20 tippekamper funnet, " + matchedFinished + " har resultat ===");
 
-      if (unmatchedApi.length > 0) {
-        console.log("API-kamper IKKE i tippelistens:", unmatchedApi);
+      // Sjekk om noen tippekamper IKKE ble funnet
+      var missing = MATCHES.filter(function(m) { return !updated[m.id]; });
+      if (missing.length > 0) {
+        console.warn("MANGLER fra API:", missing.map(function(m) { return "#" + m.id + " " + m.home + " (" + m.tlaH + ") vs " + m.away + " (" + m.tlaA + ")"; }));
       }
 
-      // Logg kamper fra lista som IKKE ble funnet i API
-      var missingLocal = MATCHES.filter(function(m) { return !updated[m.id]; });
-      if (missingLocal.length > 0) {
-        console.log("Tippekamper ikke funnet i API:", missingLocal.map(function(m) { return m.home + " vs " + m.away; }));
-      }
+      setStatus("Oppdatert: " + lastFetchTime.toLocaleTimeString() + " (" + matchedFinished + "/" + MATCHES.length + " ferdige)");
     })
     .catch(function(error) {
-      console.error("Fetch error:", error);
+      console.error("Fetch feilet:", error);
       if (fetchRetries < MAX_RETRIES) {
         fetchRetries++;
         setStatus("Forsok " + fetchRetries + "/" + MAX_RETRIES + "...", true);
@@ -462,6 +354,15 @@ function render() {
   updateMatchCount();
 }
 
+function statusLabel(s) {
+  if (s === "FINISHED") return "Ferdig";
+  if (s === "IN_PLAY") return '<span class="live-badge">LIVE</span>';
+  if (s === "PAUSED") return '<span class="live-badge">Pause</span>';
+  if (s === "TIMED" || s === "SCHEDULED") return "Kommende";
+  if (s === "POSTPONED") return "Utsatt";
+  return s || "Ukjent";
+}
+
 function renderLeaderboard() {
   var scores = PLAYERS.map(function(p, i) {
     var total = 0, details = [];
@@ -477,22 +378,22 @@ function renderLeaderboard() {
 
   var app = document.getElementById("app");
   if (scores.every(function(s) { return s.total === 0; }) && Object.keys(results).length === 0) {
-    app.innerHTML = '<div class="empty-state">Venter paa kamper...</div>';
+    app.innerHTML = '<div class="empty-state">Venter paa data fra API...</div>';
     return;
   }
 
-  var html = '<div class="card"><div class="row"><div style="font-weight:800">Live tippetabell</div><div class="small">Oppdatert: ' + (lastFetchTime ? lastFetchTime.toLocaleTimeString() : "\u2014") + '</div></div></div>';
+  var html = '<div class="card"><div class="row"><div style="font-weight:800">Live tippetabell</div><div class="small">Oppdatert: ' + (lastFetchTime ? lastFetchTime.toLocaleTimeString() : "\u2014") + "</div></div></div>";
 
   html += scores.map(function(s, idx) {
     var dHtml = "";
     if (s.details.length) {
       dHtml = s.details.map(function(d) {
-        return '<div class="details-item"><div class="left">' + d.home + " vs " + d.away + '<div class="small">Tip: ' + d.tip + '</div></div><div class="right">' + (d.actual || "\u2013") + ' <span style="color:#7be2a4;font-weight:700">' + (d.actual ? ("+" + d.points) : "") + "</span></div></div>";
+        return '<div class="details-item"><div class="left">' + d.home + " vs " + d.away + '<div class="small">Tip: ' + d.tip + '</div></div><div class="right">' + (d.actual || "\u2013") + ' <span style="color:#7be2a4;font-weight:700">+' + d.points + "</span></div></div>";
       }).join("");
     } else {
       dHtml = '<div class="small">Ingen ferdige kamper enda</div>';
     }
-    return '<details class="player" ' + (idx < 3 ? "open" : "") + '><summary><div class="details-row"><div>' + (idx + 1) + '. <span class="player-name">' + s.p + '</span></div><div class="gold">' + s.total + " pts</div></div></summary>" + '<div class="details-list">' + dHtml + "</div></details>";
+    return '<details class="player" ' + (idx < 3 ? "open" : "") + '><summary><div class="details-row"><div>' + (idx + 1) + '. <span class="player-name">' + s.p + '</span></div><div class="gold">' + s.total + " pts</div></div></summary><div class=\"details-list\">" + dHtml + "</div></details>";
   }).join("");
 
   app.innerHTML = html;
@@ -503,11 +404,10 @@ function renderMatches() {
   var played = MATCHES.filter(function(m) { return results[m.id] && results[m.id].score; });
   var upcoming = MATCHES.filter(function(m) { return !results[m.id] || !results[m.id].score; });
 
-  var html = '<div class="card"><div style="font-weight:800">Kamper</div><div class="small">Ferdigspilte kamper gruppert per dag. Kommende kamper vises under.</div></div>';
+  var html = '<div class="card"><div style="font-weight:800">Alle 20 tippekamper</div><div class="small">' + played.length + ' ferdigspilte, ' + upcoming.length + ' kommende</div></div>';
 
-  if (played.length === 0) {
-    html += '<div class="card"><div class="empty-state">Ingen kamper er ferdigspilt enda.</div></div>';
-  } else {
+  /* --- Ferdigspilte --- */
+  if (played.length > 0) {
     var byDay = {};
     played.forEach(function(m) {
       var r = results[m.id];
@@ -524,25 +424,36 @@ function renderMatches() {
       html += '<details class="matches-day" open><summary>' + day + " \u2014 " + items.length + " kamp(er)</summary><div style=\"margin-top:8px\">";
       items.forEach(function(it) {
         var m = it.match, r = it.res;
-        html += '<div class="match-card"><div class="match-row"><div><strong>' + m.home + "</strong> vs <strong>" + m.away + '</strong></div><div class="match-score">' + r.score + '</div></div><div class="match-meta small">Status: ' + (r.status || "\u2014") + " \u2022 Spilt: " + (r.date ? new Date(r.date).toLocaleTimeString() : "\u2014") + '</div><div class="player-tips">' + m.tips.map(function(t, i) {
-          return '<div class="tip-pill">' + PLAYERS[i] + ": " + t + (r.score ? (" \u2192 " + points(r.score, t) + "p") : "") + "</div>";
+        html += '<div class="match-card"><div class="match-row"><div><strong>' + m.home + "</strong> vs <strong>" + m.away + "</strong></div><div class=\"match-score\">" + r.score + "</div></div>";
+        html += '<div class="match-meta small">Status: ' + statusLabel(r.status) + " \u2022 " + (r.date ? new Date(r.date).toLocaleString("no-NO") : "\u2014") + "</div>";
+        html += '<div class="player-tips">' + m.tips.map(function(t, i) {
+          var p = points(r.score, t);
+          var color = p === 4 ? "#7be2a4" : p === 2 ? "#c8c878" : "#ff8b8b";
+          return '<div class="tip-pill">' + PLAYERS[i] + ": " + t + ' <span style="color:' + color + ';font-weight:700">\u2192 ' + p + "p</span></div>";
         }).join("") + "</div></div>";
       });
       html += "</div></details>";
     });
+  } else {
+    html += '<div class="card"><div class="empty-state">Ingen kamper er ferdigspilt enda.</div></div>';
   }
 
-  html += '<div class="card"><div style="font-weight:800">Kommende kamper</div><div class="small">Tips for kamper som ikke er spilt enda.</div></div>';
+  /* --- Kommende --- */
+  html += '<div class="card" style="margin-top:16px"><div style="font-weight:800">Kommende kamper</div></div>';
   if (upcoming.length === 0) {
-    html += '<div class="card"><div class="empty-state">Ingen kommende kamper.</div></div>';
+    html += '<div class="card"><div class="empty-state">Alle kamper er ferdigspilt!</div></div>';
   } else {
     upcoming.forEach(function(m) {
+      var r = results[m.id];
       var dateInfo = "";
-      if (results[m.id] && results[m.id].date) {
-        var d = new Date(results[m.id].date);
-        dateInfo = d.toLocaleDateString("no-NO", { day: "2-digit", month: "short" }) + " kl. " + d.toLocaleTimeString("no-NO", { hour: "2-digit", minute: "2-digit" });
+      var statusInfo = "";
+      if (r && r.date) {
+        var d = new Date(r.date);
+        dateInfo = d.toLocaleDateString("no-NO", { weekday: "short", day: "2-digit", month: "short" }) + " kl. " + d.toLocaleTimeString("no-NO", { hour: "2-digit", minute: "2-digit" });
       }
-      html += '<div class="match-card"><div class="match-row"><div><strong>' + m.home + "</strong> vs <strong>" + m.away + '</strong></div><div class="match-meta small">' + (dateInfo || "Dato TBD") + '</div></div><div class="player-tips">' + m.tips.map(function(t, i) {
+      if (r && r.status) statusInfo = statusLabel(r.status);
+      html += '<div class="match-card"><div class="match-row"><div><strong>' + m.home + "</strong> vs <strong>" + m.away + "</strong></div><div class=\"match-meta small\">" + (dateInfo || "Dato TBD") + (statusInfo ? " \u2022 " + statusInfo : "") + "</div></div>";
+      html += '<div class="player-tips">' + m.tips.map(function(t, i) {
         return '<div class="tip-pill">' + PLAYERS[i] + ": " + t + "</div>";
       }).join("") + "</div></div>";
     });
@@ -553,7 +464,7 @@ function renderMatches() {
 
 function updateMatchCount() {
   var n = MATCHES.filter(function(m) { return results[m.id] && results[m.id].score; }).length;
-  document.getElementById("matchCount").innerText = n + " / " + MATCHES.length + " kamper oppdatert";
+  document.getElementById("matchCount").innerText = n + " / " + MATCHES.length + " kamper har resultat";
 }
 
 /* ============================================================
@@ -575,31 +486,30 @@ function handleUpdate() {
    OPPSTART
    ============================================================ */
 window.addEventListener("load", function() {
-  console.log("Tippeliga Live starter...");
-  console.log("TLA-par konfigurert:", Object.keys(TLA_PAIR).length / 2, "kamper");
+  console.log("Tippeliga Live " + CACHE_VERSION + " starter...");
+  console.log("TLA-par: " + (Object.keys(TLA_PAIR).length / 2) + " kamper konfigurert");
 
-  // Last inn cached data umiddelbart (instant render)
+  // Last cache (viser sist kjente data umiddelbart)
   if (loadCache()) {
-    console.log("Cache lastet - viser sist kjente data");
+    console.log("Cache (" + CACHE_VERSION + ") lastet, viser sist kjente data");
     render();
     setStatus("Viser cachet data, henter fersk...");
   }
 
-  // Hent fersk data i bakgrunnen
+  // Hent ferske data
   fetchLive();
 });
 
 // Auto-oppdater hvert 5. minutt
 setInterval(fetchLive, UPDATE_INTERVAL);
 
-// Vis tid siden siste oppdatering
+// Oppdater tidtaker
 setInterval(function() {
   if (lastFetchTime && !isFetching) {
     var diff = Math.floor((Date.now() - lastFetchTime) / 1000);
     var min = Math.floor(diff / 60);
     var sec = diff % 60;
-    var str = min > 0 ? (min + "m " + sec + "s siden") : (sec + "s siden");
-    document.getElementById("status").innerText = "Sist oppdatert: " + str;
+    document.getElementById("status").innerText = "Sist oppdatert: " + (min > 0 ? min + "m " : "") + sec + "s siden";
   }
 }, 1000);
 </script>
