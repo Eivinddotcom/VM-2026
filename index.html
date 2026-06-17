@@ -8,40 +8,56 @@
 <title>Tippeliga Live</title>
 
 <style>
+/* Base */
 * { box-sizing: border-box; }
-body { margin:0; font-family: system-ui, -apple-system, 'Segoe UI', Roboto; background:#070914; color:#e8eef8; }
-.header { text-align:center; padding:18px; background:linear-gradient(180deg,#0d1724, #0b1220); border-bottom:1px solid #1b2a3a; position:sticky; top:0; z-index:10; }
-.title { font-size:22px; font-weight:900; letter-spacing:2px; margin:0; }
+body { margin:0; font-family: system-ui, -apple-system, 'Segoe UI', Roboto; background:#070914; color:#e8eef8; -webkit-font-smoothing:antialiased; }
+.header { text-align:center; padding:14px; background:linear-gradient(180deg,#0d1724, #0b1220); border-bottom:1px solid #102334; position:sticky; top:0; z-index:10; }
+.title { font-size:20px; font-weight:800; letter-spacing:1px; margin:0; }
 .sub { font-size:12px; color:#9fb0cc; margin:8px 0; }
-.controls { margin-top:10px; display:flex; justify-content:center; gap:8px; }
-.btn { padding:8px 14px; background:transparent; border:1px solid #21445f; color:#bfbfbf; border-radius:8px; cursor:pointer; font-weight:600; }
-.btn:hover { background:#10314633; }
+.controls { margin-top:8px; display:flex; justify-content:center; gap:8px; align-items:center; }
+.btn { padding:8px 12px; background:transparent; border:1px solid #21445f; color:#bfbfbf; border-radius:8px; cursor:pointer; font-weight:600; }
+.btn:hover { background:#0f2a3c22; }
 .btn.loading { opacity:0.6; cursor:not-allowed; }
-.tabs { margin-top:12px; display:flex; justify-content:center; gap:8px; }
-.tab { padding:8px 16px; border-radius:999px; background:#071826; border:1px solid transparent; color:#9fb0cc; cursor:pointer; }
+.tabs { margin-top:10px; display:flex; justify-content:center; gap:8px; }
+.tab { padding:8px 14px; border-radius:999px; background:#071826; border:1px solid transparent; color:#9fb0cc; cursor:pointer; font-size:13px; }
 .tab.active { background:linear-gradient(90deg,#14324a,#2a6b9a); color:white; box-shadow:0 6px 18px rgba(10,40,60,0.45); }
-.container { max-width:1100px; margin:20px auto; padding:0 12px; }
-.card { background:#071123; border:1px solid #132634; margin:10px 0; padding:12px; border-radius:10px; }
+.container { max-width:980px; margin:12px auto; padding:0 12px 60px; }
+.card { background:#071123; border:1px solid #112233; margin:10px 0; padding:12px; border-radius:10px; }
 .row { display:flex; justify-content:space-between; align-items:center; }
 .player-name { font-weight:700; }
 .gold { color:#f0c95d; font-weight:800; }
-.match-info { font-size:13px; color:#9fb0cc; margin-top:8px; padding-top:8px; border-top:1px solid #132634; }
-.match-row { display:flex; justify-content:space-between; margin:6px 0; font-size:13px; }
+.match-info { font-size:13px; color:#d8eefc; margin-top:8px; padding-top:8px; border-top:1px solid #132634; }
+.match-row { display:flex; justify-content:space-between; margin:6px 0; font-size:14px; }
 .match-score { color:#bfe0ff; font-weight:700; }
 .error-box { background:#3a1a1a; border:1px solid #8a3a3a; color:#ff8b8b; padding:12px; border-radius:8px; margin:10px 0; }
 .empty-state { text-align:center; padding:40px 20px; color:#7a8ba8; }
-
-/* Matches table */
-.table { width:100%; border-collapse:collapse; font-size:13px; color:#dfeffb; }
-.table th, .table td { padding:8px 10px; border-bottom:1px solid #112233; text-align:left; }
-.table th { background:#071a2a; position:sticky; top:64px; z-index:2; }
 .small { font-size:12px; color:#9fb0cc; }
-.player-col { width:80px; text-align:center; }
-.status { font-weight:700; }
-.match-meta { color:#9fb0cc; }
 
-/* Responsive */
-@media (max-width:900px){ .player-col { display:none; } .match-meta { display:block; } }
+/* Matches table / list */
+.matches-day { margin:8px 0; }
+.matches-day summary { font-weight:700; font-size:15px; color:#dfeffb; padding:8px 10px; background:#071a28; border-radius:8px; cursor:pointer; }
+.match-card { padding:10px; border-radius:8px; background:linear-gradient(180deg,#06121a,#06141c); margin:8px 0; border:1px solid #0e2230; }
+.match-meta { color:#9fb0cc; font-size:12px; margin-top:6px; }
+.player-tips { display:flex; gap:8px; flex-wrap:wrap; margin-top:8px; }
+.tip-pill { background:#0f2a3a; padding:6px 8px; border-radius:999px; font-size:13px; color:#e6f7ff; border:1px solid #123347; }
+
+/* Leaderboard details */
+details.player { background:#061123; border:1px solid #0e2230; padding:8px; border-radius:8px; margin:8px 0; }
+details.player summary{ display:flex; justify-content:space-between; align-items:center; list-style:none; cursor:pointer; padding:6px 8px; }
+.details-row { display:flex; justify-content:space-between; gap:12px; }
+.details-list { margin-top:8px; }
+.details-item { display:flex; justify-content:space-between; padding:8px; border-radius:6px; background:#071523; margin-bottom:6px; align-items:center; }
+.details-item .left { font-size:14px; }
+.details-item .right { font-weight:700; }
+
+/* Mobile-first adjustments */
+@media (max-width:700px){
+  .container { padding:0 10px 80px; }
+  .title { font-size:18px; }
+  .player-name { font-size:15px; }
+  .match-row { font-size:13px; }
+  .player-tips { gap:6px; }
+}
 
 </style>
 </head>
@@ -52,10 +68,9 @@ body { margin:0; font-family: system-ui, -apple-system, 'Segoe UI', Roboto; back
   <div class="sub" id="status">Starter…</div>
   <div class="controls">
     <button class="btn" id="updateBtn" onclick="handleUpdate()">↻ Oppdater</button>
-    <div style="width:8px"></div>
     <div class="small" id="matchCount"></div>
   </div>
-  <div class="tabs" style="margin-top:12px">
+  <div class="tabs">
     <div class="tab active" id="tabLeaderboard" onclick="setTab('leaderboard')">Live tippetabell</div>
     <div class="tab" id="tabMatches" onclick="setTab('matches')">Alle kamper & tips</div>
   </div>
@@ -67,12 +82,9 @@ body { margin:0; font-family: system-ui, -apple-system, 'Segoe UI', Roboto; back
 </div>
 
 <script>
-// Football-Data.org API
-const API_KEY = "532ab6db012744d0912eedbd40c4764d";
-const COMPETITION_ID = "WC"; // World Cup
-
-const PLAYERS = ["Staals", "Kong", "Dox", "Jojo", "Marko", "Barra"];
-
+// Football-Data.org proxy in server (FD_KEY removed from frontend)
+const COMPETITION_ID = 'WC';
+const PLAYERS = ["Staals","Kong","Dox","Jojo","Marko","Barra"];
 const MATCHES = [
   {id:1, home:"Mexico", away:"South Africa", tips:["3-0","2-1","2-0","3-1","2-1","3-0"]},
   {id:2, home:"South Korea", away:"Czechia", tips:["2-1","1-1","1-1","2-3","1-0","1-2"]},
@@ -96,214 +108,145 @@ const MATCHES = [
   {id:20, home:"Austria", away:"Jordan", tips:["2-2","1-0","2-1","2-0","3-0","2-0"]}
 ];
 
-let results = {}; // keyed by match id
+let results = {};
 let lastFetchTime = null;
 let isFetching = false;
 let fetchRetries = 0;
 const MAX_RETRIES = 3;
 let currentTab = 'leaderboard';
 
-// Normalize team names safely (handles null/undefined)
-function normalize(str) {
-  if (!str) return "";
-  return String(str).toLowerCase()
-    .replace(/[àáäâ]/g, 'a')
-    .replace(/[èéëê]/g, 'e')
-    .replace(/[ìíïî]/g, 'i')
-    .replace(/[òóöô]/g, 'o')
-    .replace(/[ùúüû]/g, 'u')
-    .replace(/[ñ]/g, 'n')
-    .replace(/[ç]/g, 'c')
-    .replace(/[’'`]/g, '')
-    .replace(/[^a-z0-9]/g, '')
-    .trim();
-}
+function normalize(str){ if(!str) return ''; return String(str).toLowerCase().replace(/[àáäâ]/g,'a').replace(/[èéëê]/g,'e').replace(/[ìíïî]/g,'i').replace(/[òóöô]/g,'o').replace(/[ùúüû]/g,'u').replace(/[ñ]/g,'n').replace(/[ç]/g,'c').replace(/[’'`]/g,'').replace(/[^a-z0-9]/g,'').trim(); }
+function namesMatch(a,b){ if(!a||!b) return false; return a===b || a.includes(b) || b.includes(a); }
+function points(actual, tip){ if(!actual) return 0; if(actual===tip) return 4; try{ const a=actual.split('-').map(Number); const t=tip.split('-').map(Number); if(a.length!==2||t.length!==2) return 0; const ra=Math.sign(a[0]-a[1]); const rt=Math.sign(t[0]-t[1]); return ra===rt?2:0; }catch(e){return 0;} }
 
-function points(actual, tip) {
-  if (!actual) return 0;
-  if (actual === tip) return 4;
+function setStatus(text,isError=false){ const el=document.getElementById('status'); el.innerText=text; el.style.color=isError? '#ff6b6b' : '#9fb0cc'; }
+function showError(msg){ document.getElementById('errors').innerHTML=`<div class="error-box">⚠️ ${msg}</div>`; }
+function clearErrors(){ document.getElementById('errors').innerHTML=''; }
 
-  try {
-    const a = actual.split("-").map(Number);
-    const t = tip.split("-").map(Number);
-    if (a.length !== 2 || t.length !== 2) return 0;
-    const ra = Math.sign(a[0] - a[1]);
-    const rt = Math.sign(t[0] - t[1]);
-    return ra === rt ? 2 : 0;
-  } catch (e) { return 0; }
-}
-
-function setStatus(text, isError = false) {
-  const el = document.getElementById("status");
-  el.innerText = text;
-  el.style.color = isError ? "#ff6b6b" : "#9fb0cc";
-}
-
-function showError(message) { document.getElementById("errors").innerHTML = `<div class="error-box">⚠️ ${message}</div>`; }
-function clearErrors(){ document.getElementById("errors").innerHTML = ""; }
-
-function namesMatch(normA, normB) { if (!normA || !normB) return false; return normA === normB || normA.includes(normB) || normB.includes(normA); }
-
-async function fetchLive() {
-  if (isFetching) { setStatus("Henter allerede..."); return; }
-  isFetching = true;
-  document.getElementById("updateBtn").classList.add("loading");
-  setStatus("Henter live data...");
-  clearErrors();
-
-  try {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 30000);
-    const proxyUrl = "https://corsproxy.io/?";
-    const apiUrl = `https://api.football-data.org/v4/competitions/${COMPETITION_ID}/matches?limit=500`;
-
-    const res = await fetch(proxyUrl + encodeURIComponent(apiUrl), {
-      method: "GET",
-      headers: { "X-Auth-Token": API_KEY },
-      signal: controller.signal
-    });
+async function fetchLive(){
+  if(isFetching){ setStatus('Henter allerede...'); return; }
+  isFetching=true; document.getElementById('updateBtn').classList.add('loading'); setStatus('Henter live data...'); clearErrors();
+  try{
+    const controller=new AbortController(); const timeoutId=setTimeout(()=>controller.abort(),30000);
+    const res=await fetch('/api/matches',{method:'GET', signal:controller.signal});
     clearTimeout(timeoutId);
-    if (!res.ok) throw new Error(`API svar: ${res.status} - ${res.statusText}`);
+    if(!res.ok) throw new Error(`Proxy svar: ${res.status}`);
+    const data=await res.json(); console.log('API Response:',data);
+    if(!data||!Array.isArray(data.matches)) throw new Error('Ugyldig API respons');
 
-    const data = await res.json();
-    console.log("API Response:", data);
-    if (!data || !Array.isArray(data.matches)) throw new Error("Ugyldig API respons");
-
-    const updated = { ...results };
-    let matchedCount = 0;
-    let totalFetched = data.matches.length;
-    console.log(`📊 Sjekker ${totalFetched} kamper fra API...`);
-
-    data.matches.forEach(match => {
-      try {
+    const updated={...results}; let matchedCount=0; let totalFetched=data.matches.length; console.log(`📊 Sjekker ${totalFetched} kamper fra API...`);
+    data.matches.forEach(match=>{
+      try{
         const rawHome = match.homeTeam && (match.homeTeam.name || match.homeTeam.shortName || match.homeTeam.tla || match.homeTeam.id) ? (match.homeTeam.name || match.homeTeam.shortName || match.homeTeam.tla || String(match.homeTeam.id)) : '';
         const rawAway = match.awayTeam && (match.awayTeam.name || match.awayTeam.shortName || match.awayTeam.tla || match.awayTeam.id) ? (match.awayTeam.name || match.awayTeam.shortName || match.awayTeam.tla || String(match.awayTeam.id)) : '';
         const home = normalize(rawHome); const away = normalize(rawAway);
         const fullHome = match.score && match.score.fullTime ? match.score.fullTime.home : null;
         const fullAway = match.score && match.score.fullTime ? match.score.fullTime.away : null;
-        const score = (fullHome !== null && fullHome !== undefined) ? `${fullHome}-${fullAway}` : null;
+        const score = (fullHome!==null && fullHome!==undefined) ? `${fullHome}-${fullAway}` : null;
 
-        const foundMatch = MATCHES.find(m => {
-          const mh = normalize(m.home); const ma = normalize(m.away);
-          if (namesMatch(mh, home) && namesMatch(ma, away)) return true;
-          if (namesMatch(mh, away) && namesMatch(ma, home)) return true;
-          return false;
-        });
-
-        if (foundMatch) {
-          updated[foundMatch.id] = { score: score, status: match.status, date: match.utcDate, homeName: rawHome, awayName: rawAway };
-          if (score) matchedCount++;
-          console.log(`✓ Matched: ${rawHome} ${score || 'ikke spilt'} ${rawAway}`);
-        } else {
-          if (rawHome || rawAway) console.log(`○ Ikke i listen: ${rawHome || '?'} vs ${rawAway || '?'} (norm: ${home} vs ${away})`);
-        }
-      } catch (e){ console.error('Error processing match entry', e, match); }
+        const foundMatch = MATCHES.find(m=>{ const mh=normalize(m.home); const ma=normalize(m.away); if(namesMatch(mh,home) && namesMatch(ma,away)) return true; if(namesMatch(mh,away)&&namesMatch(ma,home)) return true; return false; });
+        if(foundMatch){ updated[foundMatch.id] = { score: score, status: match.status, date: match.utcDate, homeName: rawHome, awayName: rawAway }; if(score) matchedCount++; console.log(`✓ Matched: ${rawHome} ${score||'ikke spilt'} ${rawAway}`); }
+      }catch(e){ console.error('Error processing match',e,match); }
     });
 
-    results = updated; fetchRetries = 0; lastFetchTime = new Date();
-    render();
-    setStatus(`Oppdatert: ${lastFetchTime.toLocaleTimeString()} (${matchedCount}/${MATCHES.length})`);
+    results=updated; fetchRetries=0; lastFetchTime=new Date(); render(); setStatus(`Oppdatert: ${lastFetchTime.toLocaleTimeString()} (${matchedCount}/${MATCHES.length})`);
     console.log(`✓ Total hentet: ${totalFetched} kamper, matched ${matchedCount} ferdige`);
-
-  } catch (error) {
-    console.error("Fetch error:", error);
-    if (fetchRetries < MAX_RETRIES) { fetchRetries++; setStatus(`Forsøker igjen (${fetchRetries}/${MAX_RETRIES})...`, true); setTimeout(fetchLive, 2000 + (fetchRetries * 1000)); }
-    else { showError(`Kunne ikke hente data: ${error.message}`); setStatus("Feil ved henting - prøv igjen senere", true); }
-  } finally { isFetching = false; document.getElementById("updateBtn").classList.remove("loading"); }
+  }catch(error){ console.error('Fetch error:', error); if(fetchRetries<MAX_RETRIES){ fetchRetries++; setStatus(`Forsøker igjen (${fetchRetries}/${MAX_RETRIES})...`, true); setTimeout(fetchLive,2000+(fetchRetries*1000)); } else { showError(`Kunne ikke hente data: ${error.message}`); setStatus('Feil ved henting - prøv igjen senere', true); } }
+  finally{ isFetching=false; document.getElementById('updateBtn').classList.remove('loading'); }
 }
 
-function render() {
-  if (currentTab === 'leaderboard') renderLeaderboard(); else renderMatches();
+// SSE init: listens to server /events and applies updates immediately
+function initSSE(){
+  if(typeof(EventSource)=='undefined') return; try{
+    const es=new EventSource('/events');
+    es.onmessage = ev=>{
+      try{
+        const payload = JSON.parse(ev.data);
+        if(payload && payload.type==='updates' && Array.isArray(payload.updates)){
+          payload.updates.forEach(u=>{
+            const rawHome = u.homeTeam && (u.homeTeam.name || u.homeTeam.shortName || u.homeTeam.tla || u.homeTeam.id) ? (u.homeTeam.name || u.homeTeam.shortName || u.homeTeam.tla || String(u.homeTeam.id)) : '';
+            const rawAway = u.awayTeam && (u.awayTeam.name || u.awayTeam.shortName || u.awayTeam.tla || u.awayTeam.id) ? (u.awayTeam.name || u.awayTeam.shortName || u.awayTeam.tla || String(u.awayTeam.id)) : '';
+            const home = normalize(rawHome); const away = normalize(rawAway);
+            const score = (u.home!==null && u.home!==undefined) ? `${u.home}-${u.away}` : null;
+            const foundMatch = MATCHES.find(m=>{ const mh=normalize(m.home); const ma=normalize(m.away); if(namesMatch(mh,home)&&namesMatch(ma,away)) return true; if(namesMatch(mh,away)&&namesMatch(ma,home)) return true; return false; });
+            if(foundMatch){ results[foundMatch.id] = { score: score, status: u.status, date: u.utcDate, homeName: rawHome, awayName: rawAway }; }
+          });
+          lastFetchTime=new Date(); render(); setStatus(`Oppdatert: ${lastFetchTime.toLocaleTimeString()}`);
+        }
+      }catch(e){ console.error('SSE parse error',e); }
+    };
+    es.onerror = err=>{ console.warn('SSE error',err); es.close(); };
+  }catch(e){ console.warn('SSE init failed',e); }
 }
 
-function renderLeaderboard() {
-  const scores = PLAYERS.map((p, i) => {
-    let total = 0; let matchDetails = [];
-    MATCHES.forEach(m => { if (results[m.id]){ const pts = points(results[m.id].score, m.tips[i]); total += pts; matchDetails.push({ home:m.home, away:m.away, tip:m.tips[i], actual:results[m.id].score, points:pts }); } });
-    return { p, total, matchDetails };
-  }).sort((a,b)=>b.total-a.total);
+function render(){ if(currentTab==='leaderboard') renderLeaderboard(); else renderMatches(); updateMatchCount(); }
 
-  const appDiv = document.getElementById('app');
-  if (scores.every(s=>s.total===0) && Object.keys(results).length===0) { appDiv.innerHTML = `<div class="empty-state">⏳ Venter på kamper...</div>`; return; }
+function renderLeaderboard(){
+  const scores = PLAYERS.map((p,i)=>{ let total=0; let details=[]; MATCHES.forEach(m=>{ if(results[m.id] && results[m.id].score){ const pts = points(results[m.id].score, m.tips[i]); total+=pts; details.push({ home:m.home, away:m.away, tip:m.tips[i], actual:results[m.id].score, points:pts }); } }); return { p, total, details }; }).sort((a,b)=>b.total-a.total);
 
-  appDiv.innerHTML = `
-    <div class="card">
-      <div class="row" style="align-items:center; gap:12px;">
-        <div style="display:flex; gap:12px; align-items:center;">
-          <div style="font-weight:800">Live tippetabell</div>
-          <div class="small">Oppdatert: ${ lastFetchTime ? lastFetchTime.toLocaleTimeString() : '—' }</div>
-        </div>
-        <div class="small">${Object.keys(results).length} av ${MATCHES.length} kamper har score</div>
-      </div>
-    </div>
-    ${scores.map((s,i)=>`
-      <div class="card">
-        <div class="row">
-          <div><span class="rank">#${i+1}</span> <span class="player-name">${s.p}</span></div>
-          <div class="gold">${s.total} pts</div>
-        </div>
-        ${s.matchDetails.length>0? `<div class="match-info">${s.matchDetails.map(m=>`
-          <div class="match-row"><div>${m.home} vs ${m.away}</div><div><span class="match-score">${m.actual||'–'}</span> (tip: ${m.tip}) <span style="color:#7be2a4; font-weight:700">${m.actual? ('+'+m.points):''}</span></div></div>
-        `).join('')}</div>` : ''}
-      </div>
-    `).join('')}
-  `;
+  const app=document.getElementById('app'); if(scores.every(s=>s.total===0) && Object.keys(results).length===0){ app.innerHTML=`<div class="empty-state">⏳ Venter på kamper...</div>`; return; }
+
+  let html = `<div class="card"><div class="row"><div style="font-weight:800">Live tippetabell</div><div class="small">Oppdatert: ${ lastFetchTime ? lastFetchTime.toLocaleTimeString() : '—' }</div></div></div>`;
+  html += scores.map((s,idx)=>{
+    const detailsHtml = s.details.length ? s.details.map(d=>`<div class="details-item"><div class="left">${d.home} vs ${d.away}<div class="small">Tip: ${d.tip}</div></div><div class="right">${d.actual||'–'} <span style="color:#7be2a4; font-weight:700">${d.actual?('+'+d.points):''}</span></div></div>`).join('') : '<div class="small">Ingen ferdige kamper enda</div>';
+    return `
+      <details class="player" ${idx<3? 'open':''}>
+        <summary>
+          <div class="details-row"><div>${idx+1}. <span class="player-name">${s.p}</span></div><div class="gold">${s.total} pts</div></div>
+        </summary>
+        <div class="details-list">${detailsHtml}</div>
+      </details>
+    `;
+  }).join('');
+  app.innerHTML = html;
 }
 
 function renderMatches(){
-  const appDiv = document.getElementById('app');
-  // header with legend
-  let html = `
-    <div class="card">
-      <div class="row"><div style="font-weight:800">Alle kamper & tips</div><div class="small">Viser tippetips for alle spillere - både ferdigspilte og kommende</div></div>
-    </div>
-    <div class="card">
-      <table class="table">
-        <thead><tr>
-          <th>Tid / Gr.</th>
-          <th>Match</th>
-          <th class="player-col">Staals</th>
-          <th class="player-col">Kong</th>
-          <th class="player-col">Dox</th>
-          <th class="player-col">Jojo</th>
-          <th class="player-col">Marko</th>
-          <th class="player-col">Barra</th>
-          <th>Score</th>
-          <th>Status</th>
-        </tr></thead>
-        <tbody>
-  `;
-
-  MATCHES.forEach(m => {
-    const r = results[m.id] || {};
-    const score = r.score || '–';
-    const status = r.status || 'scheduled';
-    html += `<tr>
-      <td class="small">${ r.date ? new Date(r.date).toLocaleString() : '—' }</td>
-      <td><strong>${m.home}</strong> vs ${m.away}<div class="match-meta small">ID:${m.id}</div></td>
-      ${ m.tips.map(t=>`<td class="player-col" style="text-align:center">${t}</td>`).join('') }
-      <td class="match-score">${score}</td>
-      <td class="status small">${status}</td>
-    </tr>`;
+  const app=document.getElementById('app');
+  // group played matches by local date
+  const played = MATCHES.filter(m=> results[m.id] && results[m.id].score);
+  if(played.length===0){ app.innerHTML = `<div class="empty-state">Ingen kamper er ferdigspilt enda.</div>`; return; }
+  const byDay = {};
+  played.forEach(m=>{
+    const r = results[m.id];
+    const date = r.date ? new Date(r.date) : null;
+    const dayStr = date ? date.toLocaleDateString('no-NO', { weekday:'short', day:'2-digit', month:'short' }) : 'Ukjent dato';
+    if(!byDay[dayStr]) byDay[dayStr]=[];
+    byDay[dayStr].push({ match:m, res:r });
   });
 
-  html += `</tbody></table></div>`;
-  appDiv.innerHTML = html;
+  const dayKeys = Object.keys(byDay).sort((a,b)=>{ return new Date(byDay[b][0].res.date) - new Date(byDay[a][0].res.date); });
+
+  let html = `<div class="card"><div style="font-weight:800">Kamper (ferdigspilt)</div><div class="small">Delt opp per spille-dag. Trykk for å åpne en dag.</div></div>`;
+  dayKeys.forEach(day=>{
+    const items = byDay[day];
+    html += `<details class="matches-day"><summary>${day} — ${items.length} kamp(er)</summary><div style="margin-top:8px">`;
+    items.forEach(it=>{
+      const m = it.match; const r = it.res; html += `
+        <div class="match-card">
+          <div class="match-row"><div><strong>${m.home}</strong> vs <strong>${m.away}</strong></div><div class="match-score">${r.score}</div></div>
+          <div class="match-meta small">Status: ${r.status || '—'} • Spilt: ${ r.date ? new Date(r.date).toLocaleTimeString() : '—' }</div>
+          <div class="player-tips">${m.tips.map((t,i)=>`<div class="tip-pill">${PLAYERS[i]}: ${t} ${ r.score ? (' → '+points(r.score,t)+'p') : '' }</div>`).join('')}</div>
+        </div>
+      `;
+    });
+    html += `</div></details>`;
+  });
+
+  app.innerHTML = html;
 }
 
-function setTab(tab){ currentTab = tab; document.getElementById('tabLeaderboard').classList.toggle('active', tab==='leaderboard'); document.getElementById('tabMatches').classList.toggle('active', tab==='matches'); render(); }
+function updateMatchCount(){ const matchCount = Object.keys(results).length; document.getElementById('matchCount').innerText = `${matchCount} / ${MATCHES.length} kamper oppdatert`; }
 
+function setTab(tab){ currentTab=tab; document.getElementById('tabLeaderboard').classList.toggle('active', tab==='leaderboard'); document.getElementById('tabMatches').classList.toggle('active', tab==='matches'); render(); }
 async function handleUpdate(){ await fetchLive(); }
 
 // Init
-window.addEventListener('load', ()=>{ console.log('🚀 Tippeliga Live starter med football-data.org...'); console.log('✓ API Key set'); console.log('✓ Competition: World Cup 2026'); console.log('✓ Matches loaded:', MATCHES.length); console.log('✓ Using CORS proxy'); fetchLive(); });
-
-// Auto-update hvert 30 sekund
+window.addEventListener('load', ()=>{ console.log('🚀 Tippeliga Live starter...'); fetchLive(); initSSE(); });
+// Auto-update every 30s
 setInterval(fetchLive, 30000);
 // Update status every second
-setInterval(()=>{
-  if (lastFetchTime){ const diff = Math.floor((Date.now()-lastFetchTime)/1000); const min=Math.floor(diff/60); const sec=diff%60; const timeStr = min>0?`${min}m ${sec}s siden`:`${sec}s siden`; document.getElementById('status').innerText = `Sist oppdatert: ${timeStr}`; }
-},1000);
+setInterval(()=>{ if(lastFetchTime){ const diff=Math.floor((Date.now()-lastFetchTime)/1000); const min=Math.floor(diff/60); const sec=diff%60; const timeStr = min>0?`${min}m ${sec}s siden`:`${sec}s siden`; document.getElementById('status').innerText = `Sist oppdatert: ${timeStr}`; } },1000);
 
 </script>
 
