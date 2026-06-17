@@ -333,7 +333,7 @@ async function fetchLive() {
     
     if (fetchRetries < MAX_RETRIES) {
       fetchRetries++;
-      setStatus(`Forsøker igjen (${fetchRetries}/${MAX_RETRIES})...", true);
+      setStatus(`Forsøker igjen (${fetchRetries}/${MAX_RETRIES})...`, true);
       setTimeout(fetchLive, 2000 + (fetchRetries * 1000));
     } else {
       showError(`Kunne ikke hente data: ${error.message}`);
