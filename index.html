@@ -35,7 +35,11 @@ body { margin:0; font-family: system-ui, -apple-system, 'Segoe UI', Roboto; back
 
 /* Matches table / list */
 .matches-day { margin:8px 0; }
-.matches-day summary { font-weight:700; font-size:15px; color:#dfeffb; padding:8px 10px; background:#071a28; border-radius:8px; cursor:pointer; }
+.matches-day summary { font-weight:700; font-size:15px; color:#dfeffb; padding:8px 10px; background:#071a28; border-radius:8px; cursor:pointer; display:flex; align-items:center; }
+/* chevron for collapsed/expanded state */
+.matches-day summary::before { content: "▸"; display:inline-block; transform:rotate(0deg); margin-right:8px; transition: transform 150ms ease; color:#9fb0cc; }
+.matches-day[open] summary::before { transform:rotate(90deg); color:#dfeffb; }
+
 .match-card { padding:10px; border-radius:8px; background:linear-gradient(180deg,#06121a,#06141c); margin:8px 0; border:1px solid #0e2230; }
 .match-meta { color:#9fb0cc; font-size:12px; margin-top:6px; }
 .player-tips { display:flex; gap:8px; flex-wrap:wrap; margin-top:8px; }
@@ -44,6 +48,10 @@ body { margin:0; font-family: system-ui, -apple-system, 'Segoe UI', Roboto; back
 /* Leaderboard details */
 details.player { background:#061123; border:1px solid #0e2230; padding:8px; border-radius:8px; margin:8px 0; }
 details.player summary{ display:flex; justify-content:space-between; align-items:center; list-style:none; cursor:pointer; padding:6px 8px; }
+/* Add chevron to player details as well */
+details.player summary::before { content: "▸"; display:inline-block; transform:rotate(0deg); margin-right:8px; transition: transform 150ms ease; color:#9fb0cc; }
+details.player[open] summary::before { transform:rotate(90deg); color:#f0c95d; }
+
 .details-row { display:flex; justify-content:space-between; gap:12px; }
 .details-list { margin-top:8px; }
 .details-item { display:flex; justify-content:space-between; padding:8px; border-radius:6px; background:#071523; margin-bottom:6px; align-items:center; }
