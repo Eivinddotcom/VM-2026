@@ -115,8 +115,24 @@ let fetchRetries = 0;
 const MAX_RETRIES = 3;
 let currentTab = 'leaderboard';
 
-function normalize(str){ if(!str) return ''; return String(str).toLowerCase().replace(/[àáäâ]/g,'a').replace(/[èéëê]/g,'e').replace(/[ìíïî]/g,'i').replace(/[òóöô]/g,'o').replace(/[ùúüû]/g,'u').replace(/[ñ]/g,'n').replace(/[ç]/g,'c').replace(/[’'`]/g,'').replace(/[^a-z0-9]/g,'').trim(); }
-function namesMatch(a,b){ if(!a||!b) return false; return a===b || a.includes(b) || b.includes(a); }
+// enhanced normalization + tokenization to handle variations (and stopwords)
+const STOPWORDS = ['and','islands','the','of','republic','democratic','islamic','cote','ivoire','saint','st','kingdom','federation','united','arab','cape'];
+function normalize(str){ if(!str) return ''; return String(str).toLowerCase().normalize('NFD').replace(/\p{Diacritic}/gu,'').replace(/[^a-z0-9\s]/g,' ').replace(/\s+/g,' ').trim(); }
+function tokens(str){ if(!str) return []; const t = normalize(str).split(' ').filter(Boolean).filter(w=>!STOPWORDS.includes(w)); return t; }
+
+function namesMatchRaw(rawA, rawB){ // robust matching using normalized tokens and substring checks
+  const a = normalize(rawA); const b = normalize(rawB);
+  if(!a || !b) return false;
+  if(a === b) return true;
+  if(a.includes(b) || b.includes(a)) return true;
+  const ta = tokens(rawA), tb = tokens(rawB);
+  if(ta.length===0 || tb.length===0) return false;
+  const inter = ta.filter(x=>tb.includes(x)).length;
+  const minLen = Math.min(ta.length, tb.length);
+  if(minLen>0 && (inter / minLen) >= 0.5) return true; // 50% token overlap
+  return false;
+}
+
 function points(actual, tip){ if(!actual) return 0; if(actual===tip) return 4; try{ const a=actual.split('-').map(Number); const t=tip.split('-').map(Number); if(a.length!==2||t.length!==2) return 0; const ra=Math.sign(a[0]-a[1]); const rt=Math.sign(t[0]-t[1]); return ra===rt?2:0; }catch(e){return 0;} }
 
 function setStatus(text,isError=false){ const el=document.getElementById('status'); el.innerText=text; el.style.color=isError? '#ff6b6b' : '#9fb0cc'; }
@@ -139,13 +155,23 @@ async function fetchLive(){
       try{
         const rawHome = match.homeTeam && (match.homeTeam.name || match.homeTeam.shortName || match.homeTeam.tla || match.homeTeam.id) ? (match.homeTeam.name || match.homeTeam.shortName || match.homeTeam.tla || String(match.homeTeam.id)) : '';
         const rawAway = match.awayTeam && (match.awayTeam.name || match.awayTeam.shortName || match.awayTeam.tla || match.awayTeam.id) ? (match.awayTeam.name || match.awayTeam.shortName || match.awayTeam.tla || String(match.awayTeam.id)) : '';
-        const home = normalize(rawHome); const away = normalize(rawAway);
         const fullHome = match.score && match.score.fullTime ? match.score.fullTime.home : null;
         const fullAway = match.score && match.score.fullTime ? match.score.fullTime.away : null;
         const score = (fullHome!==null && fullHome!==undefined) ? `${fullHome}-${fullAway}` : null;
 
-        const foundMatch = MATCHES.find(m=>{ const mh=normalize(m.home); const ma=normalize(m.away); if(namesMatch(mh,home) && namesMatch(ma,away)) return true; if(namesMatch(mh,away)&&namesMatch(ma,home)) return true; return false; });
+        // Try to find by robust raw-name matching first; include orientation swap
+        const foundMatch = MATCHES.find(m=>{
+          if(namesMatchRaw(m.home, rawHome) && namesMatchRaw(m.away, rawAway)) return true;
+          if(namesMatchRaw(m.home, rawAway) && namesMatchRaw(m.away, rawHome)) return true;
+          // fallback: token overlap with API tla if present
+          const apiHomeTla = match.homeTeam && match.homeTeam.tla ? String(match.homeTeam.tla).toLowerCase() : '';
+          const apiAwayTla = match.awayTeam && match.awayTeam.tla ? String(match.awayTeam.tla).toLowerCase() : '';
+          if(apiHomeTla && apiAwayTla){ const mh = normalize(m.home).split(' ')[0]; const ma = normalize(m.away).split(' ')[0]; if(mh===apiHomeTla || ma===apiAwayTla) return true; }
+          return false;
+        });
+
         if(foundMatch){ updated[foundMatch.id] = { score: score, status: match.status, date: match.utcDate, homeName: rawHome, awayName: rawAway }; if(score) matchedCount++; console.log(`✓ Matched: ${rawHome} ${score||'ikke spilt'} ${rawAway}`); }
+        else { if(rawHome||rawAway) console.log(`○ Ikke i listen: ${rawHome||'?'} vs ${rawAway||'?'} (norm: ${normalize(rawHome)} vs ${normalize(rawAway)})`); }
       }catch(e){ console.error('Error processing match',e,match); }
     });
 
@@ -166,9 +192,8 @@ function initSSE(){
           payload.updates.forEach(u=>{
             const rawHome = u.homeTeam && (u.homeTeam.name || u.homeTeam.shortName || u.homeTeam.tla || u.homeTeam.id) ? (u.homeTeam.name || u.homeTeam.shortName || u.homeTeam.tla || String(u.homeTeam.id)) : '';
             const rawAway = u.awayTeam && (u.awayTeam.name || u.awayTeam.shortName || u.awayTeam.tla || u.awayTeam.id) ? (u.awayTeam.name || u.awayTeam.shortName || u.awayTeam.tla || String(u.awayTeam.id)) : '';
-            const home = normalize(rawHome); const away = normalize(rawAway);
             const score = (u.home!==null && u.home!==undefined) ? `${u.home}-${u.away}` : null;
-            const foundMatch = MATCHES.find(m=>{ const mh=normalize(m.home); const ma=normalize(m.away); if(namesMatch(mh,home)&&namesMatch(ma,away)) return true; if(namesMatch(mh,away)&&namesMatch(ma,home)) return true; return false; });
+            const foundMatch = MATCHES.find(m=>{ if(namesMatchRaw(m.home, rawHome) && namesMatchRaw(m.away, rawAway)) return true; if(namesMatchRaw(m.home, rawAway) && namesMatchRaw(m.away, rawHome)) return true; return false; });
             if(foundMatch){ results[foundMatch.id] = { score: score, status: u.status, date: u.utcDate, homeName: rawHome, awayName: rawAway }; }
           });
           lastFetchTime=new Date(); render(); setStatus(`Oppdatert: ${lastFetchTime.toLocaleTimeString()}`);
@@ -203,40 +228,29 @@ function renderLeaderboard(){
 
 function renderMatches(){
   const app=document.getElementById('app');
-  // group played matches by local date
+  // played matches
   const played = MATCHES.filter(m=> results[m.id] && results[m.id].score);
-  if(played.length===0){ app.innerHTML = `<div class="empty-state">Ingen kamper er ferdigspilt enda.</div>`; return; }
-  const byDay = {};
-  played.forEach(m=>{
-    const r = results[m.id];
-    const date = r.date ? new Date(r.date) : null;
-    const dayStr = date ? date.toLocaleDateString('no-NO', { weekday:'short', day:'2-digit', month:'short' }) : 'Ukjent dato';
-    if(!byDay[dayStr]) byDay[dayStr]=[];
-    byDay[dayStr].push({ match:m, res:r });
-  });
+  // upcoming matches (still include tips so users can see them)
+  const upcoming = MATCHES.filter(m=> !results[m.id] || !results[m.id].score);
 
-  const dayKeys = Object.keys(byDay).sort((a,b)=>{ return new Date(byDay[b][0].res.date) - new Date(byDay[a][0].res.date); });
+  let html = `<div class="card"><div style="font-weight:800">Kamper</div><div class="small">Ferdigspilte kamper er gruppert per dag. Kommende kamper vises under "Kommende".</div></div>`;
 
-  let html = `<div class="card"><div style="font-weight:800">Kamper (ferdigspilt)</div><div class="small">Delt opp per spille-dag. Trykk for å åpne en dag.</div></div>`;
-  dayKeys.forEach(day=>{
-    const items = byDay[day];
-    html += `<details class="matches-day"><summary>${day} — ${items.length} kamp(er)</summary><div style="margin-top:8px">`;
-    items.forEach(it=>{
-      const m = it.match; const r = it.res; html += `
-        <div class="match-card">
-          <div class="match-row"><div><strong>${m.home}</strong> vs <strong>${m.away}</strong></div><div class="match-score">${r.score}</div></div>
-          <div class="match-meta small">Status: ${r.status || '—'} • Spilt: ${ r.date ? new Date(r.date).toLocaleTimeString() : '—' }</div>
-          <div class="player-tips">${m.tips.map((t,i)=>`<div class="tip-pill">${PLAYERS[i]}: ${t} ${ r.score ? (' → '+points(r.score,t)+'p') : '' }</div>`).join('')}</div>
-        </div>
-      `;
-    });
-    html += `</div></details>`;
-  });
+  if(played.length===0){ html += `<div class="card"><div class="empty-state">Ingen kamper er ferdigspilt enda.</div></div>`; }
+  else {
+    // group played matches by local date
+    const byDay = {};
+    played.forEach(m=>{ const r = results[m.id]; const date = r.date ? new Date(r.date) : null; const dayStr = date ? date.toLocaleDateString('no-NO', { weekday:'short', day:'2-digit', month:'short' }) : 'Ukjent dato'; if(!byDay[dayStr]) byDay[dayStr]=[]; byDay[dayStr].push({ match:m, res:r }); });
+    const dayKeys = Object.keys(byDay).sort((a,b)=> new Date(byDay[b][0].res.date) - new Date(byDay[a][0].res.date));
+    dayKeys.forEach(day=>{ const items = byDay[day]; html += `<details class="matches-day"><summary>${day} — ${items.length} kamp(er)</summary><div style="margin-top:8px">`; items.forEach(it=>{ const m = it.match; const r = it.res; html += `<div class="match-card"><div class="match-row"><div><strong>${m.home}</strong> vs <strong>${m.away}</strong></div><div class="match-score">${r.score}</div></div><div class="match-meta small">Status: ${r.status || '—'} • Spilt: ${ r.date ? new Date(r.date).toLocaleTimeString() : '—' }</div><div class="player-tips">${m.tips.map((t,i)=>`<div class="tip-pill">${PLAYERS[i]}: ${t} ${ r.score ? (' → '+points(r.score,t)+'p') : '' }</div>`).join('')}</div></div>`; }); html += `</div></details>`; });
+  }
+
+  // Upcoming matches (show tips even if not played)
+  if(upcoming.length>0){ html += `<div class="card"><div style="font-weight:800">Kommende kamper</div><div class="small">Viser tips for kommende kamper.</div></div>`; upcoming.forEach(m=>{ html += `<div class="match-card"><div class="match-row"><div><strong>${m.home}</strong> vs <strong>${m.away}</strong></div><div class="match-meta small">ID: ${m.id}</div></div><div class="player-tips">${m.tips.map((t,i)=>`<div class="tip-pill">${PLAYERS[i]}: ${t}</div>`).join('')}</div></div>`; }); }
 
   app.innerHTML = html;
 }
 
-function updateMatchCount(){ const matchCount = Object.keys(results).length; document.getElementById('matchCount').innerText = `${matchCount} / ${MATCHES.length} kamper oppdatert`; }
+function updateMatchCount(){ const playedCount = MATCHES.filter(m=> results[m.id] && results[m.id].score).length; document.getElementById('matchCount').innerText = `${playedCount} / ${MATCHES.length} kamper oppdatert`; }
 
 function setTab(tab){ currentTab=tab; document.getElementById('tabLeaderboard').classList.toggle('active', tab==='leaderboard'); document.getElementById('tabMatches').classList.toggle('active', tab==='matches'); render(); }
 async function handleUpdate(){ await fetchLive(); }
