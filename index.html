@@ -82,10 +82,8 @@ details.player summary{ display:flex; justify-content:space-between; align-items
 </div>
 
 <script>
-// Note: Reverted to client-side fetching via CORS proxy so the site works from GitHub Pages.
-// If you later deploy the server proxy (server/index.js), we can switch back to SSE and /api/matches.
-
-const API_KEY = "532ab6db012744d0912eedbd40c4764d"; // frontend key (exposed) — rotate if needed
+// Client-side fetching via CORS proxy for GitHub Pages
+const API_KEY = "532ab6db012744d0912eedbd40c4764d"; // rotate later if this is real
 const COMPETITION_ID = 'WC';
 const PLAYERS = ["Staals","Kong","Dox","Jojo","Marko","Barra"];
 const MATCHES = [
@@ -111,6 +109,26 @@ const MATCHES = [
   {id:20, home:"Austria", away:"Jordan", tips:["2-2","1-0","2-1","2-0","3-0","2-0"]}
 ];
 
+// manual alias map to cover common differences between API names and our local names
+const ALIASES = {
+  'korea republic': 'south korea',
+  'korea, republic of': 'south korea',
+  'republic of korea': 'south korea',
+  'czech republic': 'czechia',
+  'cape verde islands': 'cape verde',
+  'cape verde is.': 'cape verde',
+  'curacao': 'curacao',
+  'cote d ivoire': 'ivory coast',
+  'cote d' + 'ivoire': 'ivory coast',
+  'ivory coast': 'ivory coast',
+  'congo dr': 'congo dr',
+  'dr congo': 'congo dr',
+  'democratic republic of the congo': 'congo dr',
+  'usa': 'united states',
+  'united states of america': 'united states',
+  'panama': 'panama'
+};
+
 let results = {};
 let lastFetchTime = null;
 let isFetching = false;
@@ -118,20 +136,26 @@ let fetchRetries = 0;
 const MAX_RETRIES = 3;
 let currentTab = 'leaderboard';
 
-// enhanced normalization + tokenization to handle variations (and stopwords)
-const STOPWORDS = ['and','islands','the','of','republic','democratic','islamic','cote','ivoire','saint','st','kingdom','federation','united','arab','cape'];
+// normalization helpers
 function normalize(str){ if(!str) return ''; return String(str).toLowerCase().normalize('NFD').replace(/\p{Diacritic}/gu,'').replace(/[^a-z0-9\s]/g,' ').replace(/\s+/g,' ').trim(); }
-function tokens(str){ if(!str) return []; const t = normalize(str).split(' ').filter(Boolean).filter(w=>!STOPWORDS.includes(w)); return t; }
-function namesMatchRaw(rawA, rawB){ // robust matching using normalized tokens and substring checks
-  const a = normalize(rawA); const b = normalize(rawB);
-  if(!a || !b) return false;
-  if(a === b) return true;
-  if(a.includes(b) || b.includes(a)) return true;
-  const ta = tokens(rawA), tb = tokens(rawB);
-  if(ta.length===0 || tb.length===0) return false;
-  const inter = ta.filter(x=>tb.includes(x)).length;
-  const minLen = Math.min(ta.length, tb.length);
-  if(minLen>0 && (inter / minLen) >= 0.5) return true; // 50% token overlap
+function canonicalName(raw){ const n = normalize(raw); if(!n) return n; if(ALIASES[n]) return ALIASES[n]; // direct alias
+ // try stripping common suffixes (islands, republic)
+ return n; }
+function tokens(str){ if(!str) return []; const t = normalize(str).split(' ').filter(Boolean); return t; }
+function tokenOverlap(a,b){ const ta=tokens(a), tb=tokens(b); if(ta.length===0||tb.length===0) return 0; const inter = ta.filter(x=>tb.includes(x)).length; return inter/Math.min(ta.length,tb.length); }
+
+function namesMatchAdvanced(localName, apiName){
+  if(!localName || !apiName) return false;
+  const ln = canonicalName(localName);
+  const an = canonicalName(apiName);
+  if(!ln || !an) return false;
+  if(ln === an) return true;
+  if(ln.includes(an) || an.includes(ln)) return true;
+  const overlap = tokenOverlap(ln, an);
+  if(overlap >= 0.5) return true;
+  // try cross token overlap
+  const cross = (tokenOverlap(localName, apiName) + tokenOverlap(localName, apiName)) / 2;
+  if(cross >= 0.45) return true;
   return false;
 }
 
@@ -165,21 +189,36 @@ async function fetchLive(){
         const rawAway = match.awayTeam && (match.awayTeam.name || match.awayTeam.shortName || match.awayTeam.tla || match.awayTeam.id) ? (match.awayTeam.name || match.awayTeam.shortName || match.awayTeam.tla || String(match.awayTeam.id)) : '';
         const fullHome = match.score && match.score.fullTime ? match.score.fullTime.home : null;
         const fullAway = match.score && match.score.fullTime ? match.score.fullTime.away : null;
-        const score = (fullHome!==null && fullHome!==undefined) ? `${fullHome}-${fullAway}` : null;
+        const isFinished = match.status === 'FINISHED' || (fullHome!==null && fullHome!==undefined);
+        const score = isFinished ? `${fullHome}-${fullAway}` : null;
 
-        // Try to find by robust raw-name matching first; include orientation swap
-        const foundMatch = MATCHES.find(m=>{
-          if(namesMatchRaw(m.home, rawHome) && namesMatchRaw(m.away, rawAway)) return true;
-          if(namesMatchRaw(m.home, rawAway) && namesMatchRaw(m.away, rawHome)) return true;
-          // fallback: token overlap with API tla if present
+        // Try several matching strategies
+        let foundMatch = null;
+        // 1) exact canonical name match both orientation
+        foundMatch = MATCHES.find(m=> namesMatchAdvanced(m.home, rawHome) && namesMatchAdvanced(m.away, rawAway));
+        if(!foundMatch) foundMatch = MATCHES.find(m=> namesMatchAdvanced(m.home, rawAway) && namesMatchAdvanced(m.away, rawHome));
+        // 2) token overlap fallback
+        if(!foundMatch){
+          foundMatch = MATCHES.find(m=> tokenOverlap(m.home, rawHome) >= 0.5 && tokenOverlap(m.away, rawAway) >= 0.5);
+          if(!foundMatch) foundMatch = MATCHES.find(m=> tokenOverlap(m.home, rawAway) >= 0.5 && tokenOverlap(m.away, rawHome) >= 0.5);
+        }
+        // 3) TLA fallback (if API provides TLA)
+        if(!foundMatch){
           const apiHomeTla = match.homeTeam && match.homeTeam.tla ? String(match.homeTeam.tla).toLowerCase() : '';
           const apiAwayTla = match.awayTeam && match.awayTeam.tla ? String(match.awayTeam.tla).toLowerCase() : '';
-          if(apiHomeTla && apiAwayTla){ const mh = normalize(m.home).split(' ')[0]; const ma = normalize(m.away).split(' ')[0]; if(mh===apiHomeTla || ma===apiAwayTla) return true; }
-          return false;
-        });
+          if(apiHomeTla && apiAwayTla){
+            foundMatch = MATCHES.find(m=> {
+              const mh = normalize(m.home).split(' ')[0]; const ma = normalize(m.away).split(' ')[0];
+              return (mh===apiHomeTla && ma===apiAwayTla) || (mh===apiAwayTla && ma===apiHomeTla);
+            });
+          }
+        }
 
-        if(foundMatch){ updated[foundMatch.id] = { score: score, status: match.status, date: match.utcDate, homeName: rawHome, awayName: rawAway }; if(score) matchedCount++; console.log(`✓ Matched: ${rawHome} ${score||'ikke spilt'} ${rawAway}`); }
-        else { if(rawHome||rawAway) console.log(`○ Ikke i listen: ${rawHome||'?'} vs ${rawAway||'?'} (norm: ${normalize(rawHome)} vs ${normalize(rawAway)})`); }
+        if(foundMatch){ updated[foundMatch.id] = { score: score, status: match.status, date: match.utcDate, homeName: rawHome, awayName: rawAway, apiId: match.id }; if(score) matchedCount++; console.log(`✓ Matched: ${rawHome} ${score||'ikke spilt'} ${rawAway} -> local id ${foundMatch.id}`); }
+        else {
+          // log un-matched for debugging (will appear in console)
+          if(rawHome||rawAway) console.log('○ Ikke i listen (needs alias):', { apiId: match.id, rawHome, rawAway, tlaHome: match.homeTeam?.tla, tlaAway: match.awayTeam?.tla, utcDate: match.utcDate });
+        }
       }catch(e){ console.error('Error processing match',e,match); }
     });
 
@@ -189,8 +228,8 @@ async function fetchLive(){
   finally{ isFetching=false; document.getElementById('updateBtn').classList.remove('loading'); }
 }
 
-// NOTE: SSE (EventSource) is disabled for GitHub Pages client-only setup to avoid 404 errors.
-function initSSE(){ /* no-op when running client-only on GitHub Pages */ }
+// SSE disabled in client-only mode
+function initSSE(){ /* no-op */ }
 
 function render(){ if(currentTab==='leaderboard') renderLeaderboard(); else renderMatches(); updateMatchCount(); }
 
@@ -233,7 +272,11 @@ function renderMatches(){
   }
 
   // Upcoming matches (show tips even if not played)
-  if(upcoming.length>0){ html += `<div class="card"><div style="font-weight:800">Kommende kamper</div><div class="small">Viser tips for kommende kamper.</div></div>`; upcoming.forEach(m=>{ html += `<div class="match-card"><div class="match-row"><div><strong>${m.home}</strong> vs <strong>${m.away}</strong></div><div class="match-meta small">ID: ${m.id}</div></div><div class="player-tips">${m.tips.map((t,i)=>`<div class="tip-pill">${PLAYERS[i]}: ${t}</div>`).join('')}</div></div>`; }); }
+  html += `<div class="card"><div style="font-weight:800">Kommende kamper</div><div class="small">Viser tips for kommende kamper.</div></div>`;
+  if(upcoming.length===0){ html += `<div class="card"><div class="empty-state">Ingen kommende kamper.</div></div>`; }
+  else {
+    upcoming.forEach(m=>{ html += `<div class="match-card"><div class="match-row"><div><strong>${m.home}</strong> vs <strong>${m.away}</strong></div><div class="match-meta small">ID: ${m.id}</div></div><div class="player-tips">${m.tips.map((t,i)=>`<div class="tip-pill">${PLAYERS[i]}: ${t}</div>`).join('')}</div></div>`; });
+  }
 
   app.innerHTML = html;
 }
