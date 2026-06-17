@@ -210,8 +210,10 @@ let isFetching = false;
 let fetchRetries = 0;
 const MAX_RETRIES = 3;
 
+// Normalize team names safely (handles null/undefined)
 function normalize(str) {
-  return str.toLowerCase()
+  if (!str) return "";
+  return String(str).toLowerCase()
     .replace(/[àáäâ]/g, 'a')
     .replace(/[èéëê]/g, 'e')
     .replace(/[ìíïî]/g, 'i')
@@ -219,7 +221,8 @@ function normalize(str) {
     .replace(/[ùúüû]/g, 'u')
     .replace(/[ñ]/g, 'n')
     .replace(/[ç]/g, 'c')
-    .replaceAll(/[\s\-\.]/g, '')
+    .replace(/[’'`]/g, '')
+    .replace(/[^a-z0-9]/g, '')
     .trim();
 }
 
@@ -230,7 +233,7 @@ function points(actual, tip) {
   try {
     const a = actual.split("-").map(Number);
     const t = tip.split("-").map(Number);
-    
+
     if (a.length !== 2 || t.length !== 2) return 0;
 
     const ra = Math.sign(a[0] - a[1]);
@@ -257,6 +260,12 @@ function clearErrors() {
   document.getElementById("errors").innerHTML = "";
 }
 
+// Helper: check if two normalized names match (allow partial matches)
+function namesMatch(normA, normB) {
+  if (!normA || !normB) return false;
+  return normA === normB || normA.includes(normB) || normB.includes(normA);
+}
+
 async function fetchLive() {
   if (isFetching) {
     setStatus("Henter allerede...");
@@ -274,7 +283,7 @@ async function fetchLive() {
 
     // Football-Data.org API med CORS proxy - hent ALLE kamper
     const proxyUrl = "https://corsproxy.io/?";
-    const apiUrl = `https://api.football-data.org/v4/competitions/${COMPETITION_ID}/matches?limit=200`;
+    const apiUrl = `https://api.football-data.org/v4/competitions/${COMPETITION_ID}/matches?limit=500`;
 
     const res = await fetch(proxyUrl + encodeURIComponent(apiUrl), {
       method: "GET",
@@ -293,13 +302,9 @@ async function fetchLive() {
     const data = await res.json();
     console.log("API Response:", data);
 
-    if (!data || !data.matches) {
+    if (!data || !Array.isArray(data.matches)) {
       console.error("API response:", data);
       throw new Error("Ugyldig API respons");
-    }
-
-    if (!Array.isArray(data.matches)) {
-      throw new Error("API returnerte ingen kamper");
     }
 
     const updated = { ...results };
@@ -309,28 +314,44 @@ async function fetchLive() {
     console.log(`📊 Sjekker ${totalFetched} kamper fra API...`);
 
     data.matches.forEach(match => {
-      if (!match.homeTeam || !match.awayTeam) return;
+      // Safely extract team names (some entries may have null fields)
+      const rawHome = match.homeTeam && (match.homeTeam.name || match.homeTeam.shortName || match.homeTeam.tla || match.homeTeam.id) ? (match.homeTeam.name || match.homeTeam.shortName || match.homeTeam.tla || String(match.homeTeam.id)) : '';
+      const rawAway = match.awayTeam && (match.awayTeam.name || match.awayTeam.shortName || match.awayTeam.tla || match.awayTeam.id) ? (match.awayTeam.name || match.awayTeam.shortName || match.awayTeam.tla || String(match.awayTeam.id)) : '';
 
-      const home = normalize(match.homeTeam.name);
-      const away = normalize(match.awayTeam.name);
-      const score = match.score.fullTime.home !== null ? `${match.score.fullTime.home}-${match.score.fullTime.away}` : null;
+      const home = normalize(rawHome);
+      const away = normalize(rawAway);
 
-      const foundMatch = MATCHES.find(m =>
-        normalize(m.home) === home && normalize(m.away) === away
-      );
+      const fullHome = match.score && match.score.fullTime ? match.score.fullTime.home : null;
+      const fullAway = match.score && match.score.fullTime ? match.score.fullTime.away : null;
+      const score = (fullHome !== null && fullHome !== undefined) ? `${fullHome}-${fullAway}` : null;
+
+      // Find a MATCHES entry that matches either orientation and allow partial name matching
+      const foundMatch = MATCHES.find(m => {
+        const mh = normalize(m.home);
+        const ma = normalize(m.away);
+
+        // direct or partial match home->home and away->away
+        if (namesMatch(mh, home) && namesMatch(ma, away)) return true;
+        // swapped orientation: API might list teams in opposite order
+        if (namesMatch(mh, away) && namesMatch(ma, home)) return true;
+        return false;
+      });
 
       if (foundMatch) {
         updated[foundMatch.id] = {
           score: score,
           status: match.status,
           date: match.utcDate,
-          homeName: match.homeTeam.name,
-          awayName: match.awayTeam.name
+          homeName: rawHome,
+          awayName: rawAway
         };
         if (score) matchedCount++;
-        console.log(`✓ Matched: ${match.homeTeam.name} ${score || 'ikke spilt'} ${match.awayTeam.name}`);
+        console.log(`✓ Matched: ${rawHome} ${score || 'ikke spilt'} ${rawAway}`);
       } else {
-        console.log(`○ Ikke i listen: ${match.homeTeam.name} vs ${match.awayTeam.name}`);
+        // Not one of the matches we track
+        if (rawHome || rawAway) {
+          console.log(`○ Ikke i listen: ${rawHome || '?'} vs ${rawAway || '?'} (normalized: ${home} vs ${away})`);
+        }
       }
     });
 
@@ -344,7 +365,7 @@ async function fetchLive() {
 
   } catch (error) {
     console.error("Fetch error:", error);
-    
+
     if (fetchRetries < MAX_RETRIES) {
       fetchRetries++;
       setStatus(`Forsøker igjen (${fetchRetries}/${MAX_RETRIES})...`, true);
