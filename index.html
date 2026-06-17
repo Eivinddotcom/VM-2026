@@ -82,7 +82,10 @@ details.player summary{ display:flex; justify-content:space-between; align-items
 </div>
 
 <script>
-// Football-Data.org proxy in server (FD_KEY removed from frontend)
+// Note: Reverted to client-side fetching via CORS proxy so the site works from GitHub Pages.
+// If you later deploy the server proxy (server/index.js), we can switch back to SSE and /api/matches.
+
+const API_KEY = "532ab6db012744d0912eedbd40c4764d"; // frontend key (exposed) — rotate if needed
 const COMPETITION_ID = 'WC';
 const PLAYERS = ["Staals","Kong","Dox","Jojo","Marko","Barra"];
 const MATCHES = [
@@ -119,7 +122,6 @@ let currentTab = 'leaderboard';
 const STOPWORDS = ['and','islands','the','of','republic','democratic','islamic','cote','ivoire','saint','st','kingdom','federation','united','arab','cape'];
 function normalize(str){ if(!str) return ''; return String(str).toLowerCase().normalize('NFD').replace(/\p{Diacritic}/gu,'').replace(/[^a-z0-9\s]/g,' ').replace(/\s+/g,' ').trim(); }
 function tokens(str){ if(!str) return []; const t = normalize(str).split(' ').filter(Boolean).filter(w=>!STOPWORDS.includes(w)); return t; }
-
 function namesMatchRaw(rawA, rawB){ // robust matching using normalized tokens and substring checks
   const a = normalize(rawA); const b = normalize(rawB);
   if(!a || !b) return false;
@@ -144,10 +146,16 @@ async function fetchLive(){
   isFetching=true; document.getElementById('updateBtn').classList.add('loading'); setStatus('Henter live data...'); clearErrors();
   try{
     const controller=new AbortController(); const timeoutId=setTimeout(()=>controller.abort(),30000);
-    const res=await fetch('/api/matches',{method:'GET', signal:controller.signal});
+    const proxyUrl = "https://corsproxy.io/?";
+    const apiUrl = `https://api.football-data.org/v4/competitions/${COMPETITION_ID}/matches?limit=500`;
+    const res = await fetch(proxyUrl + encodeURIComponent(apiUrl), {
+      method: 'GET',
+      headers: { 'X-Auth-Token': API_KEY },
+      signal: controller.signal
+    });
     clearTimeout(timeoutId);
     if(!res.ok) throw new Error(`Proxy svar: ${res.status}`);
-    const data=await res.json(); console.log('API Response:',data);
+    const data = await res.json(); console.log('API Response:',data);
     if(!data||!Array.isArray(data.matches)) throw new Error('Ugyldig API respons');
 
     const updated={...results}; let matchedCount=0; let totalFetched=data.matches.length; console.log(`📊 Sjekker ${totalFetched} kamper fra API...`);
@@ -181,28 +189,8 @@ async function fetchLive(){
   finally{ isFetching=false; document.getElementById('updateBtn').classList.remove('loading'); }
 }
 
-// SSE init: listens to server /events and applies updates immediately
-function initSSE(){
-  if(typeof(EventSource)=='undefined') return; try{
-    const es=new EventSource('/events');
-    es.onmessage = ev=>{
-      try{
-        const payload = JSON.parse(ev.data);
-        if(payload && payload.type==='updates' && Array.isArray(payload.updates)){
-          payload.updates.forEach(u=>{
-            const rawHome = u.homeTeam && (u.homeTeam.name || u.homeTeam.shortName || u.homeTeam.tla || u.homeTeam.id) ? (u.homeTeam.name || u.homeTeam.shortName || u.homeTeam.tla || String(u.homeTeam.id)) : '';
-            const rawAway = u.awayTeam && (u.awayTeam.name || u.awayTeam.shortName || u.awayTeam.tla || u.awayTeam.id) ? (u.awayTeam.name || u.awayTeam.shortName || u.awayTeam.tla || String(u.awayTeam.id)) : '';
-            const score = (u.home!==null && u.home!==undefined) ? `${u.home}-${u.away}` : null;
-            const foundMatch = MATCHES.find(m=>{ if(namesMatchRaw(m.home, rawHome) && namesMatchRaw(m.away, rawAway)) return true; if(namesMatchRaw(m.home, rawAway) && namesMatchRaw(m.away, rawHome)) return true; return false; });
-            if(foundMatch){ results[foundMatch.id] = { score: score, status: u.status, date: u.utcDate, homeName: rawHome, awayName: rawAway }; }
-          });
-          lastFetchTime=new Date(); render(); setStatus(`Oppdatert: ${lastFetchTime.toLocaleTimeString()}`);
-        }
-      }catch(e){ console.error('SSE parse error',e); }
-    };
-    es.onerror = err=>{ console.warn('SSE error',err); es.close(); };
-  }catch(e){ console.warn('SSE init failed',e); }
-}
+// NOTE: SSE (EventSource) is disabled for GitHub Pages client-only setup to avoid 404 errors.
+function initSSE(){ /* no-op when running client-only on GitHub Pages */ }
 
 function render(){ if(currentTab==='leaderboard') renderLeaderboard(); else renderMatches(); updateMatchCount(); }
 
@@ -256,7 +244,7 @@ function setTab(tab){ currentTab=tab; document.getElementById('tabLeaderboard').
 async function handleUpdate(){ await fetchLive(); }
 
 // Init
-window.addEventListener('load', ()=>{ console.log('🚀 Tippeliga Live starter...'); fetchLive(); initSSE(); });
+window.addEventListener('load', ()=>{ console.log('🚀 Tippeliga Live starter med football-data.org...'); console.log('✓ API Key set'); console.log('✓ Competition: World Cup 2026'); console.log('✓ Matches loaded:', MATCHES.length); console.log('✓ Using CORS proxy'); fetchLive(); /* SSE disabled for GitHub Pages client-only setup */ });
 // Auto-update every 30s
 setInterval(fetchLive, 30000);
 // Update status every second
