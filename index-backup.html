@@ -1,189 +1,428 @@
 <!DOCTYPE html>
 <html lang="no">
 <head>
-<meta charset="UTF-8" />
+<meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<meta name="description" content="Tippeliga Live - VM 2026 resultater og poengstilling">
+<meta name="description" content="Tippeliga Live - VM 2026"/>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='75' font-size='75'>⚽</text></svg>">
 <title>Tippeliga Live</title>
 <style>
-* { box-sizing: border-box; }
-body { margin:0; font-family: system-ui, -apple-system, 'Segoe UI', Roboto; background:#070914; color:#e8eef8; -webkit-font-smoothing:antialiased; }
-.header { text-align:center; padding:14px; background:linear-gradient(180deg,#0d1724, #0b1220); border-bottom:1px solid #102334; position:sticky; top:0; z-index:10; }
-.title { font-size:20px; font-weight:800; letter-spacing:1px; margin:0; }
-.sub { font-size:12px; color:#9fb0cc; margin:8px 0; }
-.controls { margin-top:8px; display:flex; justify-content:center; gap:8px; align-items:center; }
-.btn { padding:8px 12px; background:transparent; border:1px solid #21445f; color:#bfbfbf; border-radius:8px; cursor:pointer; font-weight:600; }
-.btn:hover { background:#0f2a3c22; }
-.btn.loading { opacity:0.6; cursor:not-allowed; }
-.tabs { margin-top:10px; display:flex; justify-content:center; gap:8px; }
-.tab { padding:8px 14px; border-radius:999px; background:#071826; border:1px solid transparent; color:#9fb0cc; cursor:pointer; font-size:13px; }
-.tab.active { background:linear-gradient(90deg,#14324a,#2a6b9a); color:white; box-shadow:0 6px 18px rgba(10,40,60,0.45); }
-.container { max-width:980px; margin:12px auto; padding:0 12px 60px; }
-.card { background:#071123; border:1px solid #112233; margin:10px 0; padding:12px; border-radius:10px; }
-.row { display:flex; justify-content:space-between; align-items:center; }
-.player-name { font-weight:700; }
-.gold { color:#f0c95d; font-weight:800; }
-.match-row { display:flex; justify-content:space-between; margin:6px 0; font-size:14px; }
-.match-score { color:#bfe0ff; font-weight:700; }
-.error-box { background:#3a1a1a; border:1px solid #8a3a3a; color:#ff8b8b; padding:12px; border-radius:8px; margin:10px 0; }
-.empty-state { text-align:center; padding:40px 20px; color:#7a8ba8; }
-.small { font-size:12px; color:#9fb0cc; }
-.matches-day { margin:8px 0; }
-.matches-day summary { font-weight:700; font-size:15px; color:#dfeffb; padding:8px 10px; background:#071a28; border-radius:8px; cursor:pointer; display:flex; align-items:center; }
-.matches-day summary::before { content: "\25B8"; display:inline-block; transform:rotate(0deg); margin-right:8px; transition: transform 150ms ease; color:#9fb0cc; }
-.matches-day[open] summary::before { transform:rotate(90deg); color:#dfeffb; }
-.match-card { padding:10px; border-radius:8px; background:linear-gradient(180deg,#06121a,#06141c); margin:8px 0; border:1px solid #0e2230; }
-.match-meta { color:#9fb0cc; font-size:12px; margin-top:6px; }
-.player-tips { display:flex; gap:8px; flex-wrap:wrap; margin-top:8px; }
-.tip-pill { background:#0f2a3a; padding:6px 8px; border-radius:999px; font-size:13px; color:#e6f7ff; border:1px solid #123347; }
-details.player { background:#061123; border:1px solid #0e2230; padding:8px; border-radius:8px; margin:8px 0; }
-details.player summary { display:flex; justify-content:space-between; align-items:center; list-style:none; cursor:pointer; padding:6px 8px; }
-details.player summary::before { content: "\25B8"; display:inline-block; transform:rotate(0deg); margin-right:8px; transition: transform 150ms ease; color:#9fb0cc; }
-details.player[open] summary::before { transform:rotate(90deg); color:#f0c95d; }
-.details-row { display:flex; justify-content:space-between; gap:12px; }
-.details-list { margin-top:8px; }
-.details-item { display:flex; justify-content:space-between; padding:8px; border-radius:6px; background:#071523; margin-bottom:6px; align-items:center; }
-.details-item .left { font-size:14px; }
-.details-item .right { font-weight:700; }
-.live-badge { display:inline-block; background:#2a6b3a; color:#8fffb0; font-size:11px; padding:2px 8px; border-radius:999px; font-weight:700; margin-left:6px; animation: pulse 1.5s infinite; }
-@keyframes pulse { 0%,100%{opacity:1;} 50%{opacity:0.5;} }
-@media (max-width:700px){
-  .container { padding:0 10px 80px; }
-  .title { font-size:18px; }
-  .player-name { font-size:15px; }
-  .match-row { font-size:13px; }
-  .player-tips { gap:6px; }
+/* ── RESET & BASE ─────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  background: #060b16;
+  color: #ddeeff;
+  -webkit-font-smoothing: antialiased;
+  min-height: 100vh;
+}
+
+/* ── HEADER ───────────────────────────────────── */
+.header {
+  background: linear-gradient(180deg, #0c1928 0%, #080f1c 100%);
+  border-bottom: 1px solid #0f2030;
+  position: sticky; top: 0; z-index: 20;
+  padding: 12px 16px 0;
+  text-align: center;
+}
+.title {
+  font-size: 18px; font-weight: 900;
+  letter-spacing: 2px; color: #e8f4ff;
+  text-transform: uppercase;
+}
+.status-bar {
+  font-size: 11px; color: #6a8caa;
+  margin: 6px 0 4px;
+  min-height: 16px;
+}
+.controls {
+  display: flex; justify-content: center; align-items: center;
+  gap: 10px; margin-bottom: 10px;
+}
+.btn-refresh {
+  display: flex; align-items: center; gap: 5px;
+  padding: 6px 14px;
+  background: transparent;
+  border: 1px solid #1a3a55;
+  color: #aaccee;
+  border-radius: 20px;
+  cursor: pointer; font-size: 13px; font-weight: 600;
+  transition: background 150ms, border-color 150ms;
+  min-height: 36px;
+}
+.btn-refresh:hover { background: #0f2a3c; border-color: #2a5a80; }
+.btn-refresh.loading { opacity: 0.5; pointer-events: none; }
+.match-count-badge {
+  font-size: 11px; color: #4a7a9a;
+  background: #0a1a28;
+  border: 1px solid #0f2a3a;
+  border-radius: 20px;
+  padding: 4px 10px;
+}
+.tabs {
+  display: flex; justify-content: center; gap: 6px;
+  padding: 0 12px 10px;
+}
+.tab {
+  padding: 7px 16px;
+  border-radius: 20px;
+  font-size: 13px; font-weight: 600;
+  color: #6a8caa;
+  cursor: pointer;
+  border: 1px solid transparent;
+  background: transparent;
+  transition: all 150ms;
+  min-height: 36px;
+  display: flex; align-items: center;
+}
+.tab:hover { color: #aaccee; background: #0a1825; }
+.tab.active {
+  background: linear-gradient(135deg, #12304a, #1a4a6e);
+  color: #e0f0ff;
+  border-color: #1e4a6a;
+  box-shadow: 0 2px 12px rgba(20,70,110,0.5);
+}
+
+/* ── LAYOUT ───────────────────────────────────── */
+.container {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 10px 12px 80px;
+}
+
+/* ── SECTION HEADER CARD ─────────────────────── */
+.section-header {
+  background: #081020;
+  border: 1px solid #0e2030;
+  border-radius: 12px;
+  padding: 12px 14px;
+  margin: 8px 0 4px;
+  display: flex; justify-content: space-between; align-items: center;
+}
+.section-title { font-weight: 800; font-size: 14px; color: #c8e0f8; }
+.section-sub { font-size: 11px; color: #4a7a9a; }
+
+/* ── ERROR BOX ───────────────────────────────── */
+.error-box {
+  background: #2a1010; border: 1px solid #6a2020;
+  color: #ff8888; border-radius: 10px;
+  padding: 12px 14px; font-size: 13px; margin: 8px 0;
+}
+.empty-state {
+  text-align: center; padding: 32px 20px;
+  color: #4a6a88; font-size: 14px;
+}
+
+/* ── LEADERBOARD ─────────────────────────────── */
+.leaderboard-summary-card {
+  background: #081020;
+  border: 1px solid #0e2030;
+  border-radius: 12px;
+  padding: 12px 14px;
+  margin: 6px 0;
+}
+details.player {
+  background: #07101e;
+  border: 1px solid #0d1e2e;
+  border-radius: 12px;
+  margin: 6px 0;
+  overflow: hidden;
+  transition: border-color 200ms;
+}
+details.player[open] { border-color: #1a3a55; }
+details.player summary {
+  list-style: none;
+  cursor: pointer;
+  padding: 12px 14px;
+  display: flex; align-items: center; gap: 10px;
+  min-height: 52px;
+  user-select: none;
+  -webkit-user-select: none;
+}
+details.player summary::-webkit-details-marker { display: none; }
+.player-rank {
+  font-size: 18px; width: 28px; text-align: center;
+  flex-shrink: 0;
+}
+.player-info { flex: 1; min-width: 0; }
+.player-name { font-weight: 800; font-size: 15px; color: #ddeeff; }
+.player-stats-mini { font-size: 11px; color: #4a7a9a; margin-top: 2px; }
+.player-score {
+  font-size: 22px; font-weight: 900;
+  color: #f0c040;
+  flex-shrink: 0;
+}
+.player-score .pts-label { font-size: 13px; color: #a08020; font-weight: 600; }
+.chevron {
+  width: 20px; height: 20px; flex-shrink: 0;
+  color: #3a6a8a;
+  transition: transform 200ms;
+}
+details.player[open] .chevron { transform: rotate(90deg); color: #6ab0e0; }
+.player-details-inner { padding: 0 14px 12px; }
+.detail-row {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: #060e1a;
+  margin-bottom: 4px;
+}
+.detail-row:last-child { margin-bottom: 0; }
+.detail-match { font-size: 13px; color: #c8ddf0; flex: 1; min-width: 0; }
+.detail-match-sub { font-size: 11px; color: #4a7a9a; margin-top: 2px; }
+.detail-result {
+  font-size: 14px; font-weight: 800;
+  color: #c8ddf0; flex-shrink: 0;
+  margin-left: 10px;
+}
+.pts-chip {
+  display: inline-block;
+  font-size: 11px; font-weight: 700;
+  padding: 2px 7px; border-radius: 10px;
+  margin-left: 6px;
+}
+.pts-4 { background: #0d3020; color: #7be2a4; }
+.pts-2 { background: #2a2810; color: #d8d060; }
+.pts-0 { background: #2a1010; color: #e07070; }
+
+/* ── MATCHES ─────────────────────────────────── */
+details.day-group {
+  background: #07101e;
+  border: 1px solid #0d1e2e;
+  border-radius: 12px;
+  margin: 6px 0;
+  overflow: hidden;
+}
+details.day-group[open] { border-color: #1a3050; }
+details.day-group summary {
+  list-style: none;
+  cursor: pointer;
+  padding: 12px 14px;
+  display: flex; align-items: center; gap: 8px;
+  min-height: 48px;
+  user-select: none;
+  -webkit-user-select: none;
+  font-weight: 700; font-size: 14px; color: #b0ccee;
+}
+details.day-group summary::-webkit-details-marker { display: none; }
+details.day-group[open] summary { color: #d8eeff; }
+.day-count {
+  margin-left: auto;
+  font-size: 11px; font-weight: 600;
+  color: #3a6a8a;
+  background: #0a1828;
+  border: 1px solid #0f2538;
+  border-radius: 10px;
+  padding: 2px 8px;
+}
+.day-inner { padding: 4px 10px 10px; }
+
+/* ── MATCH CARD ──────────────────────────────── */
+.match-card {
+  background: #060d1a;
+  border: 1px solid #0c1c2c;
+  border-radius: 10px;
+  padding: 10px 12px;
+  margin-bottom: 6px;
+}
+.match-card:last-child { margin-bottom: 0; }
+.match-teams-row {
+  display: flex; align-items: center; gap: 6px;
+  flex-wrap: nowrap;
+}
+.team-name {
+  font-size: 14px; font-weight: 700; color: #c8ddf0;
+  flex: 1; min-width: 0;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.match-score-display {
+  font-size: 18px; font-weight: 900;
+  color: #70c0ff;
+  background: #0a1e30;
+  border: 1px solid #0f2a40;
+  border-radius: 8px;
+  padding: 3px 10px;
+  flex-shrink: 0;
+  letter-spacing: 1px;
+}
+.vs-label {
+  font-size: 11px; color: #3a6080;
+  font-weight: 700; flex-shrink: 0;
+}
+.match-meta-row {
+  display: flex; align-items: center; gap: 6px;
+  margin-top: 7px; flex-wrap: wrap;
+}
+.match-time { font-size: 11px; color: #4a7a9a; }
+.live-badge {
+  display: inline-flex; align-items: center;
+  background: #0d3020; color: #50e090;
+  font-size: 10px; font-weight: 800;
+  padding: 2px 8px; border-radius: 10px;
+  border: 1px solid #1a6040;
+  animation: pulse 1.4s ease-in-out infinite;
+  letter-spacing: 1px;
+}
+@keyframes pulse { 0%,100%{opacity:1;} 50%{opacity:0.4;} }
+.tips-row {
+  display: flex; flex-wrap: wrap; gap: 5px;
+  margin-top: 8px;
+}
+.tip-pill {
+  display: inline-flex; align-items: center; gap: 4px;
+  background: #0a1828;
+  border: 1px solid #102030;
+  border-radius: 20px;
+  padding: 4px 9px;
+  font-size: 12px; color: #8aaccc;
+  white-space: nowrap;
+}
+.tip-pill .tip-name { color: #6a8caa; font-weight: 600; }
+.tip-pill .tip-score { color: #c8ddf0; font-weight: 700; }
+.tip-pill .tip-pts { font-size: 11px; font-weight: 700; }
+
+/* ── UPCOMING MATCH CARD (no score) ─────────── */
+.upcoming-card {
+  background: #060d1a;
+  border: 1px solid #0c1c2c;
+  border-radius: 10px;
+  padding: 10px 12px;
+  margin-bottom: 6px;
+}
+.upcoming-card:last-child { margin-bottom: 0; }
+.upcoming-teams {
+  display: flex; align-items: center; gap: 8px;
+}
+.upcoming-team { font-size: 14px; font-weight: 700; color: #90aacc; flex: 1; min-width: 0; }
+.upcoming-time { font-size: 11px; color: #3a6080; flex-shrink: 0; }
+
+/* ── MOBILE RESPONSIVE ───────────────────────── */
+@media (max-width: 480px) {
+  .title { font-size: 16px; letter-spacing: 1px; }
+  .container { padding: 8px 8px 80px; }
+  .team-name { font-size: 13px; }
+  .match-score-display { font-size: 16px; padding: 3px 8px; }
+  .tip-pill { font-size: 11px; padding: 3px 7px; }
+  .player-score { font-size: 20px; }
+  .tabs { gap: 4px; }
+  .tab { padding: 6px 12px; font-size: 12px; }
 }
 </style>
 </head>
 <body>
+
 <div class="header">
-  <h1 class="title">&#9917; TIPPELIGA LIVE</h1>
-  <div class="sub" id="status">Starter...</div>
+  <div class="title">&#9917; Tippeliga Live</div>
+  <div class="status-bar" id="status">Starter...</div>
   <div class="controls">
-    <button class="btn" id="updateBtn" onclick="handleUpdate()">&#8635; Oppdater</button>
-    <div class="small" id="matchCount"></div>
+    <button class="btn-refresh" id="updateBtn" onclick="handleUpdate()">
+      <span id="refreshIcon">&#8635;</span> Oppdater
+    </button>
+    <div class="match-count-badge" id="matchCount">— / —</div>
   </div>
   <div class="tabs">
-    <div class="tab active" id="tabLeaderboard" onclick="setTab('leaderboard')">Live tippetabell</div>
-    <div class="tab" id="tabMatches" onclick="setTab('matches')">Alle kamper & tips</div>
+    <div class="tab active" id="tabLeaderboard" onclick="setTab('leaderboard')">Tippetabell</div>
+    <div class="tab" id="tabMatches" onclick="setTab('matches')">Kamper & tips</div>
   </div>
 </div>
+
 <div class="container">
   <div id="errors"></div>
   <div id="app"></div>
 </div>
+
 <script>
 /* ============================================================
    KONFIGURASJON
    ============================================================ */
-var API_KEY = "532ab6db012744d0912eedbd40c4764d";
+var API_KEY        = "532ab6db012744d0912eedbd40c4764d";
 var COMPETITION_ID = "WC";
-var UPDATE_INTERVAL = 300000;
-var CACHE_VERSION = "v5";
+var UPDATE_INTERVAL = 300000; // 5 min
+var CACHE_VERSION  = "v7";
 
 /* ============================================================
-   SPILLERE OG ALLE TIPS (69 kamper)
-   Tips-rekkefølge: [Staals, Kong, Dox, Jojo, Marko, Barra]
+   SPILLERE – rekkefølge: [Staals, Kong, Dox, Jojo, Marko, Barra]
    ============================================================ */
 var PLAYERS = ["Staals","Kong","Dox","Jojo","Marko","Barra"];
+var RANK_ICON = ["🥇","🥈","🥉","4.","5.","6."];
+
 var MATCHES = [
   /* === MATCHDAG 1 === */
-  /* 11. juni */
-  {id:1,  home:"Mexico",         away:"South Africa",           tlaH:"MEX", tlaA:"RSA", tips:["3-0","2-1","2-0","3-1","2-1","3-0"]},
-  /* 12. juni */
-  {id:2,  home:"South Korea",    away:"Czechia",                tlaH:"KOR", tlaA:"CZE", tips:["2-1","1-1","1-1","2-3","1-0","1-2"]},
-  {id:3,  home:"Canada",         away:"Bosnia and Herzegovina", tlaH:"CAN", tlaA:"BIH", tips:["1-1","0-1","2-1","2-0","1-1","2-0"]},
-  /* 13. juni */
-  {id:4,  home:"United States",  away:"Paraguay",               tlaH:"USA", tlaA:"PAR", tips:["2-1","1-1","0-0","2-3","3-0","2-1"]},
-  {id:5,  home:"Qatar",          away:"Switzerland",            tlaH:"QAT", tlaA:"SUI", tips:["0-3","0-3","0-1","1-3","0-2","0-3"]},
-  /* 14. juni */
-  {id:6,  home:"Brazil",         away:"Morocco",                tlaH:"BRA", tlaA:"MAR", tips:["2-2","1-1","3-1","2-2","2-1","2-1"]},
-  {id:7,  home:"Haiti",          away:"Scotland",               tlaH:"HAI", tlaA:"SCO", tips:["0-3","0-0","0-3","0-2","0-3","0-2"]},
-  {id:8,  home:"Australia",      away:"Turkey",                 tlaH:"AUS", tlaA:"TUR", tips:["0-1","0-2","1-3","0-2","1-2","0-2"]},
-  {id:9,  home:"Germany",        away:"Cura\u00e7ao",           tlaH:"GER", tlaA:"CUW", tips:["6-0","3-0","5-0","4-0","4-0","3-0"]},
-  {id:10, home:"Netherlands",    away:"Japan",                  tlaH:"NED", tlaA:"JPN", tips:["1-1","2-1","1-2","1-2","1-1","3-1"]},
-  /* 15. juni */
-  {id:11, home:"Ivory Coast",    away:"Ecuador",                tlaH:"CIV", tlaA:"ECU", tips:["1-2","1-0","1-1","0-3","3-3","1-2"]},
-  {id:12, home:"Sweden",         away:"Tunisia",                tlaH:"SWE", tlaA:"TUN", tips:["2-1","1-1","1-1","2-2","1-1","1-0"]},
-  {id:13, home:"Spain",          away:"Cape Verde",             tlaH:"ESP", tlaA:"CPV", tips:["3-0","3-0","3-0","5-0","3-0","3-0"]},
-  {id:14, home:"Belgium",        away:"Egypt",                  tlaH:"BEL", tlaA:"EGY", tips:["2-2","2-0","1-0","2-1","2-1","2-0"]},
-  /* 16. juni */
-  {id:15, home:"Saudi Arabia",   away:"Uruguay",                tlaH:"KSA", tlaA:"URU", tips:["0-2","0-2","0-3","0-3","2-2","0-1"]},
-  {id:16, home:"Iran",           away:"New Zealand",            tlaH:"IRN", tlaA:"NZL", tips:["2-0","1-1","0-0","2-1","1-1","1-0"]},
-  {id:17, home:"France",         away:"Senegal",                tlaH:"FRA", tlaA:"SEN", tips:["2-2","3-1","2-1","2-1","3-1","2-0"]},
-  /* 17. juni */
-  {id:18, home:"Iraq",           away:"Norway",                 tlaH:"IRQ", tlaA:"NOR", tips:["1-2","1-3","1-1","1-3","1-4","1-2"]},
-  {id:19, home:"Argentina",      away:"Algeria",                tlaH:"ARG", tlaA:"ALG", tips:["3-1","2-0","2-0","2-0","2-1","3-1"]},
-  {id:20, home:"Austria",        away:"Jordan",                 tlaH:"AUT", tlaA:"JOR", tips:["2-2","1-0","2-1","2-0","3-0","2-0"]},
-  {id:21, home:"Portugal",       away:"Congo DR",               tlaH:"POR", tlaA:"COD", tips:["3-1","3-0","4-1","3-0","3-1","3-1"]},
-  {id:22, home:"England",        away:"Croatia",                tlaH:"ENG", tlaA:"CRO", tips:["1-1","2-1","2-2","3-1","2-2","2-1"]},
-  /* 18. juni */
-  {id:23, home:"Ghana",          away:"Panama",                 tlaH:"GHA", tlaA:"PAN", tips:["1-2","1-0","4-1","2-0","2-0","2-0"]},
-  {id:24, home:"Uzbekistan",     away:"Colombia",               tlaH:"UZB", tlaA:"COL", tips:["0-1","0-3","0-2","2-2","1-1","0-2"]},
-  {id:25, home:"Czechia",        away:"South Africa",           tlaH:"CZE", tlaA:"RSA", tips:["1-1","2-0","1-0","0-1","2-0","2-1"]},
-  {id:26, home:"Switzerland",    away:"Bosnia and Herzegovina", tlaH:"SUI", tlaA:"BIH", tips:["2-0","2-1","2-0","2-0","2-1","2-1"]},
-
+  {id:1,  home:"Mexico",        away:"South Africa",           tlaH:"MEX",tlaA:"RSA", tips:["3-0","2-1","2-0","3-1","2-1","3-0"]},
+  {id:2,  home:"South Korea",   away:"Czechia",                tlaH:"KOR",tlaA:"CZE", tips:["2-1","1-1","1-1","2-3","1-0","1-2"]},
+  {id:3,  home:"Canada",        away:"Bosnia and Herzegovina", tlaH:"CAN",tlaA:"BIH", tips:["1-1","0-1","2-1","2-0","1-1","2-0"]},
+  {id:4,  home:"United States", away:"Paraguay",               tlaH:"USA",tlaA:"PAR", tips:["2-1","1-1","0-0","2-3","3-0","2-1"]},
+  {id:5,  home:"Qatar",         away:"Switzerland",            tlaH:"QAT",tlaA:"SUI", tips:["0-3","0-3","0-1","1-3","0-2","0-3"]},
+  {id:6,  home:"Brazil",        away:"Morocco",                tlaH:"BRA",tlaA:"MAR", tips:["2-2","1-1","3-1","2-2","2-1","2-1"]},
+  {id:7,  home:"Haiti",         away:"Scotland",               tlaH:"HAI",tlaA:"SCO", tips:["0-3","0-0","0-3","0-2","0-3","0-2"]},
+  {id:8,  home:"Australia",     away:"Turkey",                 tlaH:"AUS",tlaA:"TUR", tips:["0-1","0-2","1-3","0-2","1-2","0-2"]},
+  {id:9,  home:"Germany",       away:"Cura\u00e7ao",           tlaH:"GER",tlaA:"CUW", tips:["6-0","3-0","5-0","4-0","4-0","3-0"]},
+  {id:10, home:"Netherlands",   away:"Japan",                  tlaH:"NED",tlaA:"JPN", tips:["1-1","2-1","1-2","1-2","1-1","3-1"]},
+  {id:11, home:"Ivory Coast",   away:"Ecuador",                tlaH:"CIV",tlaA:"ECU", tips:["1-2","1-0","1-1","0-3","3-3","1-2"]},
+  {id:12, home:"Sweden",        away:"Tunisia",                tlaH:"SWE",tlaA:"TUN", tips:["2-1","1-1","1-1","2-2","1-1","1-0"]},
+  {id:13, home:"Spain",         away:"Cape Verde",             tlaH:"ESP",tlaA:"CPV", tips:["3-0","3-0","3-0","5-0","3-0","3-0"]},
+  {id:14, home:"Belgium",       away:"Egypt",                  tlaH:"BEL",tlaA:"EGY", tips:["2-2","2-0","1-0","2-1","2-1","2-0"]},
+  {id:15, home:"Saudi Arabia",  away:"Uruguay",                tlaH:"KSA",tlaA:"URU", tips:["0-2","0-2","0-3","0-3","2-2","0-1"]},
+  {id:16, home:"Iran",          away:"New Zealand",            tlaH:"IRN",tlaA:"NZL", tips:["2-0","1-1","0-0","2-1","1-1","1-0"]},
+  {id:17, home:"France",        away:"Senegal",                tlaH:"FRA",tlaA:"SEN", tips:["2-2","3-1","2-1","2-1","3-1","2-0"]},
+  {id:18, home:"Iraq",          away:"Norway",                 tlaH:"IRQ",tlaA:"NOR", tips:["1-2","1-3","1-1","1-3","1-4","1-2"]},
+  {id:19, home:"Argentina",     away:"Algeria",                tlaH:"ARG",tlaA:"ALG", tips:["3-1","2-0","2-0","2-0","2-1","3-1"]},
+  {id:20, home:"Austria",       away:"Jordan",                 tlaH:"AUT",tlaA:"JOR", tips:["2-2","1-0","2-1","2-0","3-0","2-0"]},
+  {id:21, home:"Portugal",      away:"Congo DR",               tlaH:"POR",tlaA:"COD", tips:["3-1","3-0","4-1","3-0","3-1","3-1"]},
+  {id:22, home:"England",       away:"Croatia",                tlaH:"ENG",tlaA:"CRO", tips:["1-1","2-1","2-2","3-1","2-2","2-1"]},
+  {id:23, home:"Ghana",         away:"Panama",                 tlaH:"GHA",tlaA:"PAN", tips:["1-2","1-0","4-1","2-0","2-0","2-0"]},
+  {id:24, home:"Uzbekistan",    away:"Colombia",               tlaH:"UZB",tlaA:"COL", tips:["0-1","0-3","0-2","2-2","1-1","0-2"]},
+  {id:25, home:"Czechia",       away:"South Africa",           tlaH:"CZE",tlaA:"RSA", tips:["1-1","2-0","1-0","0-1","2-0","2-1"]},
+  {id:26, home:"Switzerland",   away:"Bosnia and Herzegovina", tlaH:"SUI",tlaA:"BIH", tips:["2-0","2-1","2-0","2-0","2-1","2-1"]},
   /* === MATCHDAG 2 === */
-  /* 19. juni */
-  {id:27, home:"Canada",         away:"Qatar",                  tlaH:"CAN", tlaA:"QAT", tips:["1-0","1-1","3-0","1-2","3-1","2-0"]},
-  {id:28, home:"Mexico",         away:"South Korea",            tlaH:"MEX", tlaA:"KOR", tips:["3-1","1-2","2-2","2-0","1-1","2-1"]},
-  {id:29, home:"United States",  away:"Australia",              tlaH:"USA", tlaA:"AUS", tips:["2-2","1-0","2-2","2-1","2-2","3-1"]},
-  /* 20. juni */
-  {id:30, home:"Scotland",       away:"Morocco",                tlaH:"SCO", tlaA:"MAR", tips:["0-3","0-2","1-2","1-3","1-2","1-3"]},
-  {id:31, home:"Brazil",         away:"Haiti",                  tlaH:"BRA", tlaA:"HAI", tips:["4-1","4-0","5-0","4-0","4-1","3-0"]},
-  {id:32, home:"Turkey",         away:"Paraguay",               tlaH:"TUR", tlaA:"PAR", tips:["3-1","0-0","2-0","2-0","2-0","2-0"]},
-  {id:33, home:"Netherlands",    away:"Sweden",                 tlaH:"NED", tlaA:"SWE", tips:["3-2","3-0","3-1","3-1","3-0","2-0"]},
-  {id:34, home:"Germany",        away:"Ivory Coast",            tlaH:"GER", tlaA:"CIV", tips:["2-1","2-1","3-2","3-0","1-2","4-0"]},
-  /* 21. juni */
-  {id:35, home:"Ecuador",        away:"Cura\u00e7ao",           tlaH:"ECU", tlaA:"CUW", tips:["3-1","1-1","3-1","2-0","2-0","2-0"]},
-  {id:36, home:"Tunisia",        away:"Japan",                  tlaH:"TUN", tlaA:"JPN", tips:["0-1","0-2","2-2","0-1","0-2","0-2"]},
-  {id:37, home:"Spain",          away:"Saudi Arabia",           tlaH:"ESP", tlaA:"KSA", tips:["1-0","4-0","3-0","3-0","3-1","4-0"]},
-  {id:38, home:"Belgium",        away:"Iran",                   tlaH:"BEL", tlaA:"IRN", tips:["2-2","3-0","2-0","3-1","3-0","3-0"]},
-  /* 22. juni */
-  {id:39, home:"Uruguay",        away:"Cape Verde",             tlaH:"URU", tlaA:"CPV", tips:["2-0","2-1","2-0","3-1","2-0","2-0"]},
-  {id:40, home:"New Zealand",    away:"Egypt",                  tlaH:"NZL", tlaA:"EGY", tips:["0-3","1-1","1-2","2-2","0-2","0-1"]},
-  {id:41, home:"Argentina",      away:"Austria",                tlaH:"ARG", tlaA:"AUT", tips:["3-0","2-1","0-0","2-1","2-1","2-1"]},
-  {id:42, home:"France",         away:"Iraq",                   tlaH:"FRA", tlaA:"IRQ", tips:["3-2","3-0","3-0","4-0","2-0","3-0"]},
-  /* 23. juni */
-  {id:43, home:"Norway",         away:"Senegal",                tlaH:"NOR", tlaA:"SEN", tips:["2-2","1-1","2-1","2-2","1-1","1-2"]},
-  {id:44, home:"Jordan",         away:"Algeria",                tlaH:"JOR", tlaA:"ALG", tips:["2-3","1-3","0-1","1-1","1-2","0-2"]},
-  {id:45, home:"Portugal",       away:"Uzbekistan",             tlaH:"POR", tlaA:"UZB", tips:["3-1","4-1","2-0","2-2","3-0","3-0"]},
-  {id:46, home:"England",        away:"Ghana",                  tlaH:"ENG", tlaA:"GHA", tips:["2-0","3-0","1-0","2-0","1-2","3-1"]},
-  /* 24. juni */
-  {id:47, home:"Panama",         away:"Croatia",                tlaH:"PAN", tlaA:"CRO", tips:["1-2","1-2","1-2","1-2","0-2","0-2"]},
-  {id:48, home:"Colombia",       away:"Congo DR",               tlaH:"COL", tlaA:"COD", tips:["3-2","2-1","1-0","2-0","2-1","2-0"]},
-  {id:49, home:"Switzerland",    away:"Canada",                 tlaH:"SUI", tlaA:"CAN", tips:["2-1","2-0","1-0","2-1","1-0","2-1"]},
-  {id:50, home:"Bosnia and Herzegovina", away:"Qatar",          tlaH:"BIH", tlaA:"QAT", tips:["2-1","2-0","1-0","2-2","2-0","1-0"]},
-
+  {id:27, home:"Canada",        away:"Qatar",                  tlaH:"CAN",tlaA:"QAT", tips:["1-0","1-1","3-0","1-2","3-1","2-0"]},
+  {id:28, home:"Mexico",        away:"South Korea",            tlaH:"MEX",tlaA:"KOR", tips:["3-1","1-2","2-2","2-0","1-1","2-1"]},
+  {id:29, home:"United States", away:"Australia",              tlaH:"USA",tlaA:"AUS", tips:["2-2","1-0","2-2","2-1","2-2","3-1"]},
+  {id:30, home:"Scotland",      away:"Morocco",                tlaH:"SCO",tlaA:"MAR", tips:["0-3","0-2","1-2","1-3","1-2","1-3"]},
+  {id:31, home:"Brazil",        away:"Haiti",                  tlaH:"BRA",tlaA:"HAI", tips:["4-1","4-0","5-0","4-0","4-1","3-0"]},
+  {id:32, home:"Turkey",        away:"Paraguay",               tlaH:"TUR",tlaA:"PAR", tips:["3-1","0-0","2-0","2-0","2-0","2-0"]},
+  {id:33, home:"Netherlands",   away:"Sweden",                 tlaH:"NED",tlaA:"SWE", tips:["3-2","3-0","3-1","3-1","3-0","2-0"]},
+  {id:34, home:"Germany",       away:"Ivory Coast",            tlaH:"GER",tlaA:"CIV", tips:["2-1","2-1","3-2","3-0","1-2","4-0"]},
+  {id:35, home:"Ecuador",       away:"Cura\u00e7ao",           tlaH:"ECU",tlaA:"CUW", tips:["3-1","1-1","3-1","2-0","2-0","2-0"]},
+  {id:36, home:"Tunisia",       away:"Japan",                  tlaH:"TUN",tlaA:"JPN", tips:["0-1","0-2","2-2","0-1","0-2","0-2"]},
+  {id:37, home:"Spain",         away:"Saudi Arabia",           tlaH:"ESP",tlaA:"KSA", tips:["1-0","4-0","3-0","3-0","3-1","4-0"]},
+  {id:38, home:"Belgium",       away:"Iran",                   tlaH:"BEL",tlaA:"IRN", tips:["2-2","3-0","2-0","3-1","3-0","3-0"]},
+  {id:39, home:"Uruguay",       away:"Cape Verde",             tlaH:"URU",tlaA:"CPV", tips:["2-0","2-1","2-0","3-1","2-0","2-0"]},
+  {id:40, home:"New Zealand",   away:"Egypt",                  tlaH:"NZL",tlaA:"EGY", tips:["0-3","1-1","1-2","2-2","0-2","0-1"]},
+  {id:41, home:"Argentina",     away:"Austria",                tlaH:"ARG",tlaA:"AUT", tips:["3-0","2-1","0-0","2-1","2-1","2-1"]},
+  {id:42, home:"France",        away:"Iraq",                   tlaH:"FRA",tlaA:"IRQ", tips:["3-2","3-0","3-0","4-0","2-0","3-0"]},
+  {id:43, home:"Norway",        away:"Senegal",                tlaH:"NOR",tlaA:"SEN", tips:["2-2","1-1","2-1","2-2","1-1","1-2"]},
+  {id:44, home:"Jordan",        away:"Algeria",                tlaH:"JOR",tlaA:"ALG", tips:["2-3","1-3","0-1","1-1","1-2","0-2"]},
+  {id:45, home:"Portugal",      away:"Uzbekistan",             tlaH:"POR",tlaA:"UZB", tips:["3-1","4-1","2-0","2-2","3-0","3-0"]},
+  {id:46, home:"England",       away:"Ghana",                  tlaH:"ENG",tlaA:"GHA", tips:["2-0","3-0","1-0","2-0","1-2","3-1"]},
+  {id:47, home:"Panama",        away:"Croatia",                tlaH:"PAN",tlaA:"CRO", tips:["1-2","1-2","1-2","1-2","0-2","0-2"]},
+  {id:48, home:"Colombia",      away:"Congo DR",               tlaH:"COL",tlaA:"COD", tips:["3-2","2-1","1-0","2-0","2-1","2-0"]},
+  {id:49, home:"Switzerland",   away:"Canada",                 tlaH:"SUI",tlaA:"CAN", tips:["2-1","2-0","1-0","2-1","1-0","2-1"]},
+  {id:50, home:"Bosnia and Herzegovina", away:"Qatar",         tlaH:"BIH",tlaA:"QAT", tips:["2-1","2-0","1-0","2-2","2-0","1-0"]},
   /* === MATCHDAG 3 === */
-  /* 25. juni */
-  {id:51, home:"Scotland",       away:"Brazil",                 tlaH:"SCO", tlaA:"BRA", tips:["1-3","1-3","1-1","1-3","1-0","1-3"]},
-  {id:52, home:"Morocco",        away:"Haiti",                  tlaH:"MAR", tlaA:"HAI", tips:["5-0","2-0","4-0","3-0","3-0","2-0"]},
-  {id:53, home:"Czechia",        away:"Mexico",                 tlaH:"CZE", tlaA:"MEX", tips:["1-1","2-2","1-2","1-4","1-3","1-3"]},
-  {id:54, home:"South Africa",   away:"South Korea",            tlaH:"RSA", tlaA:"KOR", tips:["1-2","0-1","0-2","1-2","0-2","1-2"]},
-  {id:55, home:"Ecuador",        away:"Germany",                tlaH:"ECU", tlaA:"GER", tips:["1-1","0-1","1-1","1-2","1-2","1-2"]},
-  {id:56, home:"Cura\u00e7ao",   away:"Ivory Coast",            tlaH:"CUW", tlaA:"CIV", tips:["1-2","0-2","0-3","4-2","0-2","1-0"]},
-  /* 26. juni */
-  {id:57, home:"Tunisia",        away:"Netherlands",            tlaH:"TUN", tlaA:"NED", tips:["0-1","1-2","0-1","0-1","1-2","0-3"]},
-  {id:58, home:"Japan",          away:"Sweden",                 tlaH:"JPN", tlaA:"SWE", tips:["1-0","2-0","1-0","2-1","1-1","2-1"]},
-  {id:59, home:"Turkey",         away:"United States",          tlaH:"TUR", tlaA:"USA", tips:["1-1","2-1","2-1","2-2","2-0","1-2"]},
-  {id:60, home:"Paraguay",       away:"Australia",              tlaH:"PAR", tlaA:"AUS", tips:["2-2","1-1","1-1","2-0","1-2","1-0"]},
-  {id:61, home:"Norway",         away:"France",                 tlaH:"NOR", tlaA:"FRA", tips:["1-3","1-2","1-1","3-2","2-2","0-2"]},
-  {id:62, home:"Senegal",        away:"Iraq",                   tlaH:"SEN", tlaA:"IRQ", tips:["2-0","2-0","2-0","4-0","1-0","2-0"]},
-  /* 27. juni */
-  {id:63, home:"Uruguay",        away:"Spain",                  tlaH:"URU", tlaA:"ESP", tips:["1-1","1-1","1-1","1-2","1-3","1-2"]},
-  {id:64, home:"Cape Verde",     away:"Saudi Arabia",           tlaH:"CPV", tlaA:"KSA", tips:["1-1","2-1","0-0","0-0","1-2","1-2"]},
-  {id:65, home:"New Zealand",    away:"Belgium",                tlaH:"NZL", tlaA:"BEL", tips:["0-1","0-2","1-2","0-2","1-3","0-2"]},
-  {id:66, home:"Egypt",          away:"Iran",                   tlaH:"EGY", tlaA:"IRN", tips:["2-1","1-0","2-1","0-0","1-1","2-1"]},
-  {id:67, home:"Panama",         away:"England",                tlaH:"PAN", tlaA:"ENG", tips:["0-0","0-2","0-2","2-2","0-3","0-3"]},
-  {id:68, home:"Croatia",        away:"Ghana",                  tlaH:"CRO", tlaA:"GHA", tips:["3-1","1-0","1-1","1-2","1-0","2-0"]},
-  /* 28. juni */
-  {id:69, home:"Colombia",       away:"Portugal",               tlaH:"COL", tlaA:"POR", tips:["2-2","1-1","1-3","2-2","2-2","1-2"]},
-  {id:70, home:"Congo DR",       away:"Uzbekistan",             tlaH:"COD", tlaA:"UZB", tips:["1-1","2-1","2-1","1-2","1-0","2-0"]},
-  {id:71, home:"Jordan",         away:"Argentina",              tlaH:"JOR", tlaA:"ARG", tips:["0-3","0-3","1-3","0-4","0-2","1-4"]},
-  {id:72, home:"Algeria",        away:"Austria",                tlaH:"ALG", tlaA:"AUT", tips:["2-2","1-1","2-2","1-1","0-2","2-1"]}
+  {id:51, home:"Scotland",      away:"Brazil",                 tlaH:"SCO",tlaA:"BRA", tips:["1-3","1-3","1-1","1-3","1-0","1-3"]},
+  {id:52, home:"Morocco",       away:"Haiti",                  tlaH:"MAR",tlaA:"HAI", tips:["5-0","2-0","4-0","3-0","3-0","2-0"]},
+  {id:53, home:"Czechia",       away:"Mexico",                 tlaH:"CZE",tlaA:"MEX", tips:["1-1","2-2","1-2","1-4","1-3","1-3"]},
+  {id:54, home:"South Africa",  away:"South Korea",            tlaH:"RSA",tlaA:"KOR", tips:["1-2","0-1","0-2","1-2","0-2","1-2"]},
+  {id:55, home:"Ecuador",       away:"Germany",                tlaH:"ECU",tlaA:"GER", tips:["1-1","0-1","1-1","1-2","1-2","1-2"]},
+  {id:56, home:"Cura\u00e7ao",  away:"Ivory Coast",            tlaH:"CUW",tlaA:"CIV", tips:["1-2","0-2","0-3","4-2","0-2","1-0"]},
+  {id:57, home:"Tunisia",       away:"Netherlands",            tlaH:"TUN",tlaA:"NED", tips:["0-1","1-2","0-1","0-1","1-2","0-3"]},
+  {id:58, home:"Japan",         away:"Sweden",                 tlaH:"JPN",tlaA:"SWE", tips:["1-0","2-0","1-0","2-1","1-1","2-1"]},
+  {id:59, home:"Turkey",        away:"United States",          tlaH:"TUR",tlaA:"USA", tips:["1-1","2-1","2-1","2-2","2-0","1-2"]},
+  {id:60, home:"Paraguay",      away:"Australia",              tlaH:"PAR",tlaA:"AUS", tips:["2-2","1-1","1-1","2-0","1-2","1-0"]},
+  {id:61, home:"Norway",        away:"France",                 tlaH:"NOR",tlaA:"FRA", tips:["1-3","1-2","1-1","3-2","2-2","0-2"]},
+  {id:62, home:"Senegal",       away:"Iraq",                   tlaH:"SEN",tlaA:"IRQ", tips:["2-0","2-0","2-0","4-0","1-0","2-0"]},
+  {id:63, home:"Uruguay",       away:"Spain",                  tlaH:"URU",tlaA:"ESP", tips:["1-1","1-1","1-1","1-2","1-3","1-2"]},
+  {id:64, home:"Cape Verde",    away:"Saudi Arabia",           tlaH:"CPV",tlaA:"KSA", tips:["1-1","2-1","0-0","0-0","1-2","1-2"]},
+  {id:65, home:"New Zealand",   away:"Belgium",                tlaH:"NZL",tlaA:"BEL", tips:["0-1","0-2","1-2","0-2","1-3","0-2"]},
+  {id:66, home:"Egypt",         away:"Iran",                   tlaH:"EGY",tlaA:"IRN", tips:["2-1","1-0","2-1","0-0","1-1","2-1"]},
+  {id:67, home:"Panama",        away:"England",                tlaH:"PAN",tlaA:"ENG", tips:["0-0","0-2","0-2","2-2","0-3","0-3"]},
+  {id:68, home:"Croatia",       away:"Ghana",                  tlaH:"CRO",tlaA:"GHA", tips:["3-1","1-0","1-1","1-2","1-0","2-0"]},
+  {id:69, home:"Colombia",      away:"Portugal",               tlaH:"COL",tlaA:"POR", tips:["2-2","1-1","1-3","2-2","2-2","1-2"]},
+  {id:70, home:"Congo DR",      away:"Uzbekistan",             tlaH:"COD",tlaA:"UZB", tips:["1-1","2-1","2-1","1-2","1-0","2-0"]},
+  {id:71, home:"Jordan",        away:"Argentina",              tlaH:"JOR",tlaA:"ARG", tips:["0-3","0-3","1-3","0-4","0-2","1-4"]},
+  {id:72, home:"Algeria",       away:"Austria",                tlaH:"ALG",tlaA:"AUT", tips:["2-2","1-1","2-2","1-1","0-2","2-1"]}
 ];
 
 /* ============================================================
@@ -200,12 +439,12 @@ MATCHES.forEach(function(m) {
 /* ============================================================
    TILSTAND
    ============================================================ */
-var results = {};
+var results      = {};
 var lastFetchTime = null;
-var isFetching = false;
-var fetchRetries = 0;
-var MAX_RETRIES = 2;
-var currentTab = "leaderboard";
+var isFetching   = false;
+var fetchRetries  = 0;
+var MAX_RETRIES   = 2;
+var currentTab   = "leaderboard";
 
 /* ============================================================
    POENGBEREGNING
@@ -218,17 +457,17 @@ function points(actual, tip) {
     var t = tip.split("-").map(Number);
     if (a.length !== 2 || t.length !== 2) return 0;
     return Math.sign(a[0] - a[1]) === Math.sign(t[0] - t[1]) ? 2 : 0;
-  } catch (e) { return 0; }
+  } catch(e) { return 0; }
 }
 
 /* ============================================================
-   FINN LOKAL KAMP FRA API-KAMP VIA TLA
+   TLA-MATCHING
    ============================================================ */
 function findLocalMatch(apiMatch) {
-  var homeTla = (apiMatch.homeTeam && apiMatch.homeTeam.tla) ? apiMatch.homeTeam.tla.toUpperCase() : "";
-  var awayTla = (apiMatch.awayTeam && apiMatch.awayTeam.tla) ? apiMatch.awayTeam.tla.toUpperCase() : "";
-  if (homeTla && awayTla) {
-    var key = homeTla + "-" + awayTla;
+  var hTla = (apiMatch.homeTeam && apiMatch.homeTeam.tla) ? apiMatch.homeTeam.tla.toUpperCase() : "";
+  var aTla = (apiMatch.awayTeam && apiMatch.awayTeam.tla) ? apiMatch.awayTeam.tla.toUpperCase() : "";
+  if (hTla && aTla) {
+    var key = hTla + "-" + aTla;
     if (TLA_PAIR[key]) return TLA_PAIR[key];
   }
   return null;
@@ -240,48 +479,68 @@ function findLocalMatch(apiMatch) {
 function setStatus(text, isError) {
   var el = document.getElementById("status");
   el.innerText = text;
-  el.style.color = isError ? "#ff6b6b" : "#9fb0cc";
+  el.style.color = isError ? "#ff6666" : "#6a8caa";
 }
-
 function showError(msg) {
   document.getElementById("errors").innerHTML = '<div class="error-box">' + msg + "</div>";
 }
-
 function clearErrors() {
   document.getElementById("errors").innerHTML = "";
+}
+function fmtDate(iso) {
+  if (!iso) return "";
+  var d = new Date(iso);
+  return d.toLocaleDateString("no-NO", { weekday:"short", day:"2-digit", month:"short" })
+       + " kl.\u00a0" + d.toLocaleTimeString("no-NO", { hour:"2-digit", minute:"2-digit" });
+}
+function fmtDayKey(iso) {
+  if (!iso) return "9999-99-99";
+  return iso.substring(0, 10);
+}
+function fmtDayLabel(iso) {
+  if (!iso) return "Ukjent dato";
+  var d = new Date(iso);
+  return d.toLocaleDateString("no-NO", { weekday:"long", day:"2-digit", month:"long" });
+}
+function statusLabel(s) {
+  if (s === "FINISHED") return "Ferdig";
+  if (s === "IN_PLAY")  return '<span class="live-badge">&#9679; LIVE</span>';
+  if (s === "PAUSED")   return '<span class="live-badge">&#9679; Pause</span>';
+  if (s === "TIMED" || s === "SCHEDULED") return "Kommende";
+  if (s === "POSTPONED") return "Utsatt";
+  return s || "";
+}
+function isLiveOrPaused(s) {
+  return s === "IN_PLAY" || s === "PAUSED";
 }
 
 /* ============================================================
    CACHE
    ============================================================ */
 var CACHE_KEY = "tippeliga_" + CACHE_VERSION;
-
 function saveCache() {
   try {
     localStorage.setItem(CACHE_KEY, JSON.stringify({
       results: results,
       time: lastFetchTime ? lastFetchTime.toISOString() : null
     }));
-  } catch (e) {}
+  } catch(e) {}
 }
-
 function loadCache() {
   try {
     for (var i = localStorage.length - 1; i >= 0; i--) {
-      var key = localStorage.key(i);
-      if (key && key.indexOf("tippeliga_") === 0 && key !== CACHE_KEY) {
-        localStorage.removeItem(key);
-      }
+      var k = localStorage.key(i);
+      if (k && k.indexOf("tippeliga_") === 0 && k !== CACHE_KEY) localStorage.removeItem(k);
     }
     var raw = localStorage.getItem(CACHE_KEY);
     if (!raw) return false;
-    var parsed = JSON.parse(raw);
-    if (parsed.results) {
-      results = parsed.results;
-      lastFetchTime = parsed.time ? new Date(parsed.time) : null;
+    var p = JSON.parse(raw);
+    if (p.results) {
+      results = p.results;
+      lastFetchTime = p.time ? new Date(p.time) : null;
       return true;
     }
-  } catch (e) {}
+  } catch(e) {}
   return false;
 }
 
@@ -290,32 +549,35 @@ function loadCache() {
    ============================================================ */
 function tryFetch(url, options, timeout) {
   return new Promise(function(resolve, reject) {
-    var controller = new AbortController();
-    var tid = setTimeout(function() { controller.abort(); }, timeout);
-    options.signal = controller.signal;
-    fetch(url, options).then(function(res) {
-      clearTimeout(tid);
-      if (!res.ok) { reject(new Error("HTTP " + res.status)); return; }
-      return res.text();
-    }).then(function(text) {
-      if (!text) { reject(new Error("Tom")); return; }
-      var t = text.trim();
-      if (t.charAt(0) !== "{" && t.charAt(0) !== "[") { reject(new Error("Ikke JSON")); return; }
-      resolve(JSON.parse(t));
-    }).catch(function(e) { clearTimeout(tid); reject(e); });
+    var ctrl = new AbortController();
+    var tid  = setTimeout(function() { ctrl.abort(); }, timeout);
+    options.signal = ctrl.signal;
+    fetch(url, options)
+      .then(function(res) {
+        clearTimeout(tid);
+        if (!res.ok) { reject(new Error("HTTP " + res.status)); return; }
+        return res.text();
+      })
+      .then(function(text) {
+        if (!text) { reject(new Error("Tom respons")); return; }
+        var t = text.trim();
+        if (t[0] !== "{" && t[0] !== "[") { reject(new Error("Ikke JSON")); return; }
+        resolve(JSON.parse(t));
+      })
+      .catch(function(e) { clearTimeout(tid); reject(e); });
   });
 }
-
 function fetchData(apiUrl) {
-  var headers = { "X-Auth-Token": API_KEY };
-  var direct = tryFetch(apiUrl, { method: "GET", headers: headers }, 8000);
-  var proxy = tryFetch("https://corsproxy.io/?" + encodeURIComponent(apiUrl), { method: "GET", headers: headers }, 10000);
-  if (typeof Promise.any === "function") return Promise.any([direct, proxy]);
-  return direct.catch(function() { return proxy; });
+  var hdrs = { "X-Auth-Token": API_KEY };
+  var p1 = tryFetch("https://corsproxy.io/?" + encodeURIComponent(apiUrl), { method:"GET", headers:hdrs }, 10000);
+  var apiWithKey = apiUrl + (apiUrl.indexOf("?") >= 0 ? "&" : "?") + "X-Auth-Token=" + API_KEY;
+  var p2 = tryFetch("https://api.allorigins.win/raw?url=" + encodeURIComponent(apiWithKey), { method:"GET" }, 12000);
+  if (typeof Promise.any === "function") return Promise.any([p1, p2]);
+  return p1.catch(function() { return p2; });
 }
 
 /* ============================================================
-   HOVEDFUNKSJON
+   HOVED-FETCH
    ============================================================ */
 function fetchLive() {
   if (isFetching) return Promise.resolve();
@@ -333,29 +595,19 @@ function fetchLive() {
       var updated = {};
       for (var k in results) { if (results.hasOwnProperty(k)) updated[k] = results[k]; }
 
-      var matchedFinished = 0;
-      var matchedTotal = 0;
-
+      var nFinished = 0, nMatched = 0;
       data.matches.forEach(function(match) {
         var rawHome = (match.homeTeam && (match.homeTeam.name || match.homeTeam.shortName)) || "?";
         var rawAway = (match.awayTeam && (match.awayTeam.name || match.awayTeam.shortName)) || "?";
-        var fullHome = (match.score && match.score.fullTime) ? match.score.fullTime.home : null;
-        var fullAway = (match.score && match.score.fullTime) ? match.score.fullTime.away : null;
-        var hasScore = (fullHome !== null && fullHome !== undefined && fullAway !== null && fullAway !== undefined);
-        var score = hasScore ? (fullHome + "-" + fullAway) : null;
-
-        var localMatch = findLocalMatch(match);
-        if (localMatch) {
-          matchedTotal++;
-          updated[localMatch.id] = {
-            score: score,
-            status: match.status,
-            date: match.utcDate,
-            homeName: rawHome,
-            awayName: rawAway,
-            apiId: match.id
-          };
-          if (score) matchedFinished++;
+        var fH = (match.score && match.score.fullTime) ? match.score.fullTime.home : null;
+        var fA = (match.score && match.score.fullTime) ? match.score.fullTime.away : null;
+        var hasScore = fH !== null && fH !== undefined && fA !== null && fA !== undefined;
+        var score = hasScore ? (fH + "-" + fA) : null;
+        var lm = findLocalMatch(match);
+        if (lm) {
+          nMatched++;
+          updated[lm.id] = { score:score, status:match.status, date:match.utcDate, homeName:rawHome, awayName:rawAway };
+          if (score) nFinished++;
         }
       });
 
@@ -364,13 +616,8 @@ function fetchLive() {
       lastFetchTime = new Date();
       saveCache();
       render();
-
-      var missing = MATCHES.filter(function(m) { return !updated[m.id]; });
-      if (missing.length > 0) {
-        console.warn("Tippekamper IKKE funnet i API:", missing.map(function(m) { return "#" + m.id + " " + m.home + " vs " + m.away; }));
-      }
-      console.log("Matched: " + matchedTotal + "/" + MATCHES.length + ", ferdige: " + matchedFinished);
-      setStatus("Oppdatert: " + lastFetchTime.toLocaleTimeString() + " (" + matchedFinished + "/" + MATCHES.length + " ferdige)");
+      setStatus("Oppdatert\u00a0" + lastFetchTime.toLocaleTimeString() + "\u00a0\u2022\u00a0" + nFinished + "/" + MATCHES.length + " ferdige");
+      console.log("Matched " + nMatched + "/" + MATCHES.length + ", ferdige: " + nFinished);
     })
     .catch(function(error) {
       console.error("Fetch feilet:", error);
@@ -398,15 +645,7 @@ function render() {
   updateMatchCount();
 }
 
-function statusLabel(s) {
-  if (s === "FINISHED") return "Ferdig";
-  if (s === "IN_PLAY") return '<span class="live-badge">LIVE</span>';
-  if (s === "PAUSED") return '<span class="live-badge">Pause</span>';
-  if (s === "TIMED" || s === "SCHEDULED") return "Kommende";
-  if (s === "POSTPONED") return "Utsatt";
-  return s || "Ukjent";
-}
-
+/* ── LEADERBOARD ── */
 function renderLeaderboard() {
   var scores = PLAYERS.map(function(p, i) {
     var total = 0, exact = 0, correct = 0, wrong = 0, details = [];
@@ -414,104 +653,197 @@ function renderLeaderboard() {
       if (results[m.id] && results[m.id].score) {
         var pts = points(results[m.id].score, m.tips[i]);
         total += pts;
-        if (pts === 4) exact++;
+        if      (pts === 4) exact++;
         else if (pts === 2) correct++;
-        else wrong++;
-        details.push({ home: m.home, away: m.away, tip: m.tips[i], actual: results[m.id].score, points: pts });
+        else                wrong++;
+        details.push({ home:m.home, away:m.away, tip:m.tips[i], actual:results[m.id].score, pts:pts });
       }
     });
-    return { p: p, total: total, exact: exact, correct: correct, wrong: wrong, details: details };
+    return { name:p, total:total, exact:exact, correct:correct, wrong:wrong, details:details };
   }).sort(function(a, b) { return b.total - a.total; });
 
   var app = document.getElementById("app");
-  if (scores.every(function(s) { return s.total === 0; }) && Object.keys(results).length === 0) {
-    app.innerHTML = '<div class="empty-state">Venter paa data fra API...</div>';
+  if (!scores.some(function(s) { return s.total > 0; }) && Object.keys(results).length === 0) {
+    app.innerHTML = '<div class="empty-state">Venter på data fra API...</div>';
     return;
   }
 
-  var html = '<div class="card"><div class="row"><div style="font-weight:800">Live tippetabell</div><div class="small">Oppdatert: ' + (lastFetchTime ? lastFetchTime.toLocaleTimeString() : "\u2014") + "</div></div></div>";
+  var played = scores[0] ? scores[0].details.length : 0;
+  var html = '<div class="section-header"><span class="section-title">Tippetabell</span>'
+           + '<span class="section-sub">' + played + ' kamper bedømt</span></div>';
 
   html += scores.map(function(s, idx) {
-    var statsLine = '<div class="small" style="margin-top:4px">' + s.details.length + ' kamper bedoemt \u2022 ' + s.exact + ' eksakte \u2022 ' + s.correct + ' riktig utfall \u2022 ' + s.wrong + ' feil</div>';
+    var ptsChip = function(pts) {
+      var cls = pts === 4 ? "pts-4" : pts === 2 ? "pts-2" : "pts-0";
+      return '<span class="pts-chip ' + cls + '">+' + pts + 'p</span>';
+    };
 
-    var dHtml = "";
-    if (s.details.length) {
-      dHtml = s.details.map(function(d) {
-        var color = d.points === 4 ? "#7be2a4" : d.points === 2 ? "#c8c878" : "#ff8b8b";
-        return '<div class="details-item"><div class="left">' + d.home + " vs " + d.away + '<div class="small">Tip: ' + d.tip + '</div></div><div class="right">' + d.actual + ' <span style="color:' + color + ';font-weight:700">+' + d.points + "</span></div></div>";
-      }).join("");
-    } else {
-      dHtml = '<div class="small">Ingen ferdige kamper enda</div>';
-    }
-    return '<details class="player" ' + (idx < 3 ? "open" : "") + '><summary><div class="details-row"><div>' + (idx + 1) + '. <span class="player-name">' + s.p + '</span></div><div class="gold">' + s.total + " pts</div></div></summary>" + statsLine + '<div class="details-list">' + dHtml + "</div></details>";
+    var dHtml = s.details.length
+      ? s.details.map(function(d) {
+          return '<div class="detail-row">'
+               + '<div class="detail-match">' + d.home + ' vs ' + d.away
+               + '<div class="detail-match-sub">Tip: ' + d.tip + '</div></div>'
+               + '<div class="detail-result">' + d.actual + ptsChip(d.pts) + '</div>'
+               + '</div>';
+        }).join("")
+      : '<div style="padding:8px 0;font-size:13px;color:#4a6a88">Ingen ferdige kamper enda</div>';
+
+    return '<details class="player">'
+         + '<summary>'
+         + '<div class="player-rank">' + RANK_ICON[idx] + '</div>'
+         + '<div class="player-info">'
+         +   '<div class="player-name">' + s.name + '</div>'
+         +   '<div class="player-stats-mini">' + s.exact + ' eksakte \u00b7 ' + s.correct + ' riktig utfall \u00b7 ' + s.wrong + ' feil</div>'
+         + '</div>'
+         + '<div class="player-score">' + s.total + '<span class="pts-label"> p</span></div>'
+         + '<svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">'
+         +   '<polyline points="9 18 15 12 9 6"/></svg>'
+         + '</summary>'
+         + '<div class="player-details-inner">' + dHtml + '</div>'
+         + '</details>';
   }).join("");
 
   app.innerHTML = html;
 }
 
+/* ── KAMPER & TIPS ── */
 function renderMatches() {
   var app = document.getElementById("app");
-  var played = MATCHES.filter(function(m) { return results[m.id] && results[m.id].score; });
-  var upcoming = MATCHES.filter(function(m) { return !results[m.id] || !results[m.id].score; });
 
-  var html = '<div class="card"><div style="font-weight:800">Alle ' + MATCHES.length + ' tippekamper</div><div class="small">' + played.length + ' ferdigspilte, ' + upcoming.length + ' kommende</div></div>';
+  /* Kategoriser */
+  var live    = MATCHES.filter(function(m) { return results[m.id] && isLiveOrPaused(results[m.id].status); });
+  var finished = MATCHES.filter(function(m) { return results[m.id] && results[m.id].score && !isLiveOrPaused(results[m.id].status); });
+  var upcoming = MATCHES.filter(function(m) { return !results[m.id] || (!results[m.id].score && !isLiveOrPaused(results[m.id].status)); });
 
-  if (played.length > 0) {
+  var totalPlayed = live.length + finished.length;
+  var html = '<div class="section-header"><span class="section-title">Alle ' + MATCHES.length + ' kamper</span>'
+           + '<span class="section-sub">' + totalPlayed + ' spilt \u00b7 ' + upcoming.length + ' gjenstår</span></div>';
+
+  /* ── LIVE-KAMPER (vises alltid øverst, ikke i kollapsgruppe) ── */
+  live.forEach(function(m) {
+    html += renderMatchCard(m, results[m.id], true);
+  });
+
+  /* ── FERDIGSPILTE – gruppert per dag, nyeste dag øverst ── */
+  if (finished.length > 0) {
+    /* Bygg dagsgrupper */
     var byDay = {};
-    played.forEach(function(m) {
-      var r = results[m.id];
-      var date = r.date ? new Date(r.date) : null;
-      var dayStr = date ? date.toLocaleDateString("no-NO", { weekday: "short", day: "2-digit", month: "short" }) : "Ukjent dato";
-      if (!byDay[dayStr]) byDay[dayStr] = [];
-      byDay[dayStr].push({ match: m, res: r });
+    finished.forEach(function(m) {
+      var r   = results[m.id];
+      var key = fmtDayKey(r.date);
+      if (!byDay[key]) byDay[key] = { label: fmtDayLabel(r.date), items: [] };
+      byDay[key].items.push({ match:m, res:r });
     });
-    var dayKeys = Object.keys(byDay).sort(function(a, b) {
-      return new Date(byDay[b][0].res.date) - new Date(byDay[a][0].res.date);
-    });
-    dayKeys.forEach(function(day) {
-      var items = byDay[day];
-      html += '<details class="matches-day" open><summary>' + day + " \u2014 " + items.length + " kamp(er)</summary><div style=\"margin-top:8px\">";
-      items.forEach(function(it) {
-        var m = it.match, r = it.res;
-        html += '<div class="match-card"><div class="match-row"><div><strong>' + m.home + "</strong> vs <strong>" + m.away + "</strong></div><div class=\"match-score\">" + r.score + "</div></div>";
-        html += '<div class="match-meta small">' + statusLabel(r.status) + " \u2022 " + (r.date ? new Date(r.date).toLocaleString("no-NO") : "\u2014") + "</div>";
-        html += '<div class="player-tips">' + m.tips.map(function(t, i) {
-          var p = points(r.score, t);
-          var color = p === 4 ? "#7be2a4" : p === 2 ? "#c8c878" : "#ff8b8b";
-          return '<div class="tip-pill">' + PLAYERS[i] + ": " + t + ' <span style="color:' + color + ';font-weight:700">\u2192 ' + p + "p</span></div>";
-        }).join("") + "</div></div>";
+
+    /* Sort: nyeste dag først */
+    var dayKeys = Object.keys(byDay).sort(function(a, b) { return b > a ? 1 : b < a ? -1 : 0; });
+
+    dayKeys.forEach(function(key, dayIdx) {
+      var group = byDay[key];
+      /* Sort matches within day: nyeste kamp øverst */
+      group.items.sort(function(a, b) { return new Date(b.res.date) - new Date(a.res.date); });
+
+      /* Kun den nyeste dagen åpner automatisk */
+      var openAttr = dayIdx === 0 ? " open" : "";
+
+      html += '<details class="day-group"' + openAttr + '>'
+            + '<summary>' + group.label
+            + '<span class="day-count">' + group.items.length + ' kamper</span>'
+            + '<svg style="width:16px;height:16px;flex-shrink:0;margin-left:6px;color:#3a6a8a;transition:transform 200ms" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>'
+            + '</summary>'
+            + '<div class="day-inner">';
+
+      group.items.forEach(function(it) {
+        html += renderMatchCard(it.match, it.res, false);
       });
-      html += "</div></details>";
+
+      html += '</div></details>';
     });
-  } else {
-    html += '<div class="card"><div class="empty-state">Ingen kamper er ferdigspilt enda.</div></div>';
   }
 
-  html += '<div class="card" style="margin-top:16px"><div style="font-weight:800">Kommende kamper</div></div>';
-  if (upcoming.length === 0) {
-    html += '<div class="card"><div class="empty-state">Alle kamper er ferdigspilt!</div></div>';
-  } else {
-    upcoming.forEach(function(m) {
+  /* ── KOMMENDE – lukket nedtrekksmeny, sortert kronologisk ── */
+  var upcomingSorted = upcoming.slice().sort(function(a, b) {
+    var da = (results[a.id] && results[a.id].date) ? new Date(results[a.id].date) : new Date("2099-01-01");
+    var db = (results[b.id] && results[b.id].date) ? new Date(results[b.id].date) : new Date("2099-01-01");
+    return da - db;
+  });
+
+  if (upcomingSorted.length > 0) {
+    html += '<details class="day-group">'
+          + '<summary>Kommende kamper'
+          + '<span class="day-count">' + upcomingSorted.length + ' kamper</span>'
+          + '<svg style="width:16px;height:16px;flex-shrink:0;margin-left:6px;color:#3a6a8a;transition:transform 200ms" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>'
+          + '</summary>'
+          + '<div class="day-inner">';
+
+    upcomingSorted.forEach(function(m) {
       var r = results[m.id];
-      var dateInfo = "", statusInfo = "";
-      if (r && r.date) {
-        var d = new Date(r.date);
-        dateInfo = d.toLocaleDateString("no-NO", { weekday: "short", day: "2-digit", month: "short" }) + " kl. " + d.toLocaleTimeString("no-NO", { hour: "2-digit", minute: "2-digit" });
-      }
-      if (r && r.status) statusInfo = statusLabel(r.status);
-      html += '<div class="match-card"><div class="match-row"><div><strong>' + m.home + "</strong> vs <strong>" + m.away + "</strong></div><div class=\"match-meta small\">" + (dateInfo || "Dato TBD") + (statusInfo ? " \u2022 " + statusInfo : "") + "</div></div>";
-      html += '<div class="player-tips">' + m.tips.map(function(t, i) {
-        return '<div class="tip-pill">' + PLAYERS[i] + ": " + t + "</div>";
-      }).join("") + "</div></div>";
+      var dateStr = (r && r.date) ? fmtDate(r.date) : "Dato TBD";
+      html += '<div class="upcoming-card">'
+            + '<div class="upcoming-teams">'
+            + '<div class="upcoming-team">' + m.home + '</div>'
+            + '<span style="font-size:11px;color:#2a5070;font-weight:700">vs</span>'
+            + '<div class="upcoming-team" style="text-align:right">' + m.away + '</div>'
+            + '</div>'
+            + '<div class="match-meta-row" style="margin-top:6px">'
+            + '<span class="match-time">' + dateStr + '</span>'
+            + '</div>'
+            + '<div class="tips-row">'
+            + m.tips.map(function(t, i) {
+                return '<div class="tip-pill"><span class="tip-name">' + PLAYERS[i] + '</span>'
+                     + '<span class="tip-score">' + t + '</span></div>';
+              }).join("")
+            + '</div></div>';
     });
+
+    html += '</div></details>';
+  }
+
+  if (live.length === 0 && finished.length === 0 && upcoming.length === 0) {
+    html += '<div class="empty-state">Ingen kampdata tilgjengelig enda.</div>';
   }
 
   app.innerHTML = html;
 }
 
+function renderMatchCard(m, r, alwaysOpen) {
+  var ptsChip = function(pts) {
+    var cls = pts === 4 ? "pts-4" : pts === 2 ? "pts-2" : "pts-0";
+    return '<span class="tip-pts ' + cls + '">' + pts + 'p</span>';
+  };
+
+  var scoreHtml = r.score
+    ? '<div class="match-score-display">' + r.score + '</div>'
+    : '<span class="vs-label">vs</span>';
+
+  var metaHtml = '<div class="match-meta-row">'
+               + '<span class="match-time">' + (r.date ? fmtDate(r.date) : "") + '</span>'
+               + '<span>' + statusLabel(r.status) + '</span>'
+               + '</div>';
+
+  var tipsHtml = '<div class="tips-row">'
+               + m.tips.map(function(t, i) {
+                   var pts = r.score ? points(r.score, t) : null;
+                   var chip = (pts !== null) ? ptsChip(pts) : "";
+                   return '<div class="tip-pill"><span class="tip-name">' + PLAYERS[i] + '</span>'
+                        + '<span class="tip-score">' + t + '</span>' + chip + '</div>';
+                 }).join("")
+               + '</div>';
+
+  return '<div class="match-card">'
+       + '<div class="match-teams-row">'
+       + '<div class="team-name">' + m.home + '</div>'
+       + scoreHtml
+       + '<div class="team-name" style="text-align:right">' + m.away + '</div>'
+       + '</div>'
+       + metaHtml
+       + tipsHtml
+       + '</div>';
+}
+
 function updateMatchCount() {
   var n = MATCHES.filter(function(m) { return results[m.id] && results[m.id].score; }).length;
-  document.getElementById("matchCount").innerText = n + " / " + MATCHES.length + " kamper har resultat";
+  document.getElementById("matchCount").innerText = n + "\u00a0/\u00a0" + MATCHES.length;
 }
 
 /* ============================================================
@@ -523,7 +855,6 @@ function setTab(tab) {
   document.getElementById("tabMatches").classList.toggle("active", tab === "matches");
   render();
 }
-
 function handleUpdate() {
   fetchRetries = 0;
   fetchLive();
@@ -533,18 +864,20 @@ function handleUpdate() {
    OPPSTART
    ============================================================ */
 window.addEventListener("load", function() {
-  console.log("Tippeliga Live " + CACHE_VERSION + " | " + MATCHES.length + " kamper | " + (Object.keys(TLA_PAIR).length / 2) + " TLA-par");
+  console.log("Tippeliga Live " + CACHE_VERSION + " | " + MATCHES.length + " kamper");
   if (loadCache()) { render(); setStatus("Viser cachet data, henter fersk..."); }
   fetchLive();
 });
 
 setInterval(fetchLive, UPDATE_INTERVAL);
+
 setInterval(function() {
   if (lastFetchTime && !isFetching) {
     var diff = Math.floor((Date.now() - lastFetchTime) / 1000);
-    var min = Math.floor(diff / 60);
-    var sec = diff % 60;
-    document.getElementById("status").innerText = "Sist oppdatert: " + (min > 0 ? min + "m " : "") + sec + "s siden";
+    var min  = Math.floor(diff / 60);
+    var sec  = diff % 60;
+    document.getElementById("status").innerText =
+      "Oppdatert\u00a0" + (min > 0 ? min + "m\u00a0" : "") + sec + "s\u00a0siden";
   }
 }, 1000);
 </script>
